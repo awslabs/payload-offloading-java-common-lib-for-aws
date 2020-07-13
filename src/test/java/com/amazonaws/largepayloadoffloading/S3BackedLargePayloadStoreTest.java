@@ -2,7 +2,8 @@ package com.amazonaws.largepayloadoffloading;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
-
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
@@ -11,11 +12,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
-import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
-
-import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
+import static org.mockito.Mockito.*;
 
 @RunWith(JUnitParamsRunner.class)
 public class S3BackedLargePayloadStoreTest {

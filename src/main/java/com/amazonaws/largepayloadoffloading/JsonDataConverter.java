@@ -13,26 +13,25 @@ import com.fasterxml.jackson.databind.SerializationFeature;
  * object.
  */
 class JsonDataConverter {
+    protected final ObjectMapper objectMapper;
 
-	protected final ObjectMapper objectMapper;
+    public JsonDataConverter() {
+        this(new ObjectMapper());
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        objectMapper.enableDefaultTyping(DefaultTyping.NON_FINAL);
+    }
 
-	public JsonDataConverter() {
-		this(new ObjectMapper());
-		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-		objectMapper.enableDefaultTyping(DefaultTyping.NON_FINAL);
-	}
+    public JsonDataConverter(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
-	public JsonDataConverter(ObjectMapper objectMapper) {
-		this.objectMapper = objectMapper;
-	}
+    public String serializeToJson(Object obj) throws JsonProcessingException {
+        ObjectWriter objectWriter = objectMapper.writer();
+        return objectWriter.writeValueAsString(obj);
+    }
 
-	public String serializeToJson(Object obj) throws JsonProcessingException {
-		ObjectWriter objectWriter = objectMapper.writer();
-		return objectWriter.writeValueAsString(obj);
-	}
-
-	public <T> T deserializeFromJson(String jsonText, Class<T> objectType) throws Exception {
-		return objectMapper.readValue(jsonText, objectType);
-	}
+    public <T> T deserializeFromJson(String jsonText, Class<T> objectType) throws Exception {
+        return objectMapper.readValue(jsonText, objectType);
+    }
 }

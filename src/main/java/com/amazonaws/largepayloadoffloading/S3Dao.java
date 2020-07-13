@@ -66,7 +66,7 @@ public class S3Dao {
         ObjectMetadata payloadContentStreamMetadata = new ObjectMetadata();
         payloadContentStreamMetadata.setContentLength(payloadContentSize);
         PutObjectRequest putObjectRequest = new PutObjectRequest(s3BucketName, s3Key,
-            payloadContentStream, payloadContentStreamMetadata);
+                payloadContentStream, payloadContentStreamMetadata);
 
         // https://docs.aws.amazon.com/AmazonS3/latest/dev/kms-using-sdks.html
         if (sseAwsKeyManagementParams != null) {

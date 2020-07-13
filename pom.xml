@@ -13,7 +13,7 @@
     <url>https://github.com/awslabs/large-payload-offloading-java-common-lib-for-aws</url>
 
     <scm>
-        <url>https://github.com/awslabs/awslabs/large-payload-offloading-java-common-lib-for-aws.git</url>
+        <url>https://github.com/awslabs/large-payload-offloading-java-common-lib-for-aws</url>
     </scm>
 
     <licenses>
@@ -40,11 +40,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-sqs</artifactId>
-            <version>${aws-java-sdk.version}</version>
-        </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>

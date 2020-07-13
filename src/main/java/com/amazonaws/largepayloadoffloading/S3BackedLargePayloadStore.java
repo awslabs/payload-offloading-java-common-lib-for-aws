@@ -11,7 +11,7 @@ import java.util.UUID;
  */
 public class S3BackedLargePayloadStore implements LargePayloadStore {
     private static final Log LOG = LogFactory.getLog(S3BackedLargePayloadStore.class);
-    
+
     private final String s3BucketName;
     private final S3Dao s3Dao;
     private final SSEAwsKeyManagementParams sseAwsKeyManagementParams;

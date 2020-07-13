@@ -9,24 +9,24 @@ import java.io.OutputStream;
  * strings.
  */
 class CountingOutputStream extends OutputStream {
-	private long totalSize;
+    private long totalSize;
 
-	@Override
-	public void write(int b) {
-		++totalSize;
-	}
+    @Override
+    public void write(int b) {
+        ++totalSize;
+    }
 
-	@Override
-	public void write(byte[] b) {
-		totalSize += b.length;
-	}
+    @Override
+    public void write(byte[] b) {
+        totalSize += b.length;
+    }
 
-	@Override
-	public void write(byte[] b, int offset, int len) {
-		totalSize += len;
-	}
+    @Override
+    public void write(byte[] b, int offset, int len) {
+        totalSize += len;
+    }
 
-	public long getTotalSize() {
-		return totalSize;
-	}
+    public long getTotalSize() {
+        return totalSize;
+    }
 }

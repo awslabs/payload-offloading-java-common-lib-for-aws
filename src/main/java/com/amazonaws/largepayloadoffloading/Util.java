@@ -31,6 +31,6 @@ public class Util {
     }
 
     public static String getUserAgentHeader(String clientName) {
-       return clientName + "/" + VersionInfoUtils.getVersion();
-    }    
+        return clientName + "/" + VersionInfoUtils.getVersion();
+    }
 }

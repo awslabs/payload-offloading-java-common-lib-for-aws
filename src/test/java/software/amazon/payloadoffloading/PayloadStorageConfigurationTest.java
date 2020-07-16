@@ -1,4 +1,4 @@
-package com.amazonaws.payloadoffloading;
+package software.amazon.payloadoffloading;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;

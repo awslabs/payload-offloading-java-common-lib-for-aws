@@ -1,4 +1,4 @@
-package com.amazonaws.payloadoffloading;
+package software.amazon.payloadoffloading;
 
 import java.io.OutputStream;
 

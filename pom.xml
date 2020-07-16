@@ -8,7 +8,7 @@
     <artifactId>payloadoffloading-common</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>Large payload offloading common library for AWS</name>
+    <name>Payload offloading common library for AWS</name>
     <description>Common library between extended Amazon AWS clients to save payloads up to 2GB on Amazon S3.</description>
     <url>https://github.com/awslabs/payload-offloading-java-common-lib-for-aws</url>
 

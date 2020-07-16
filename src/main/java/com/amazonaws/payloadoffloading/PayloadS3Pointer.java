@@ -1,4 +1,4 @@
-package com.amazonaws.largepayloadoffloading;
+package com.amazonaws.payloadoffloading;
 
 import com.amazonaws.AmazonClientException;
 import org.apache.commons.logging.Log;

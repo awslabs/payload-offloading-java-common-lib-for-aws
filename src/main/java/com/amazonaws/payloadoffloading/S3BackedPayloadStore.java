@@ -1,4 +1,4 @@
-package com.amazonaws.largepayloadoffloading;
+package com.amazonaws.payloadoffloading;
 
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import org.apache.commons.logging.Log;
@@ -7,21 +7,21 @@ import org.apache.commons.logging.LogFactory;
 import java.util.UUID;
 
 /**
- * S3 based implementation for LargePayloadStore.
+ * S3 based implementation for PayloadStore.
  */
-public class S3BackedLargePayloadStore implements LargePayloadStore {
-    private static final Log LOG = LogFactory.getLog(S3BackedLargePayloadStore.class);
+public class S3BackedPayloadStore implements PayloadStore {
+    private static final Log LOG = LogFactory.getLog(S3BackedPayloadStore.class);
 
     private final String s3BucketName;
     private final S3Dao s3Dao;
     private final SSEAwsKeyManagementParams sseAwsKeyManagementParams;
 
-    public S3BackedLargePayloadStore(S3Dao s3Dao, String s3BucketName) {
+    public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName) {
         this(s3Dao, s3BucketName, null);
     }
 
-    public S3BackedLargePayloadStore(S3Dao s3Dao, String s3BucketName,
-                                     SSEAwsKeyManagementParams sseAwsKeyManagementParams) {
+    public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName,
+                                SSEAwsKeyManagementParams sseAwsKeyManagementParams) {
         this.s3BucketName = s3BucketName;
         this.s3Dao = s3Dao;
         this.sseAwsKeyManagementParams = sseAwsKeyManagementParams;

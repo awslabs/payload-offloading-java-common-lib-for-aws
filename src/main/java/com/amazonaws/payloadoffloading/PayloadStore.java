@@ -1,4 +1,4 @@
-package com.amazonaws.largepayloadoffloading;
+package com.amazonaws.payloadoffloading;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -6,7 +6,7 @@ import com.amazonaws.AmazonServiceException;
 /**
  * An AWS storage service that supports saving high payload sizes.
  */
-public interface LargePayloadStore {
+public interface PayloadStore {
     /**
      * Stores payload in a store that has higher payload size limit than that is supported by original payload store.
      *
@@ -16,7 +16,7 @@ public interface LargePayloadStore {
      * @throws AmazonClientException  If any internal errors are encountered on the client side while
      *                                attempting to make the request or handle the response. For example
      *                                if a network connection is not available.
-     * @throws AmazonServiceException If an error response is returned by actual LargePayloadStore indicating
+     * @throws AmazonServiceException If an error response is returned by actual PayloadStore indicating
      *                                either a problem with the data in the request, or a server side issue.
      */
     String storeOriginalPayload(String payload, Long payloadContentSize);
@@ -30,7 +30,7 @@ public interface LargePayloadStore {
      * @throws AmazonClientException  If any internal errors are encountered on the client side while
      *                                attempting to make the request or handle the response. For example
      *                                if payloadPointer is invalid or a network connection is not available.
-     * @throws AmazonServiceException If an error response is returned by actual LargePayloadStore indicating
+     * @throws AmazonServiceException If an error response is returned by actual PayloadStore indicating
      *                                a server side issue.
      */
     String getOriginalPayload(String payloadPointer);
@@ -41,9 +41,9 @@ public interface LargePayloadStore {
      *
      * @param payloadPointer
      * @throws AmazonClientException  If any internal errors are encountered on the client side while
-     *                                attempting to make the request or handle the response to/from LargePayloadStore.
+     *                                attempting to make the request or handle the response to/from PayloadStore.
      *                                For example, if payloadPointer is invalid or a network connection is not available.
-     * @throws AmazonServiceException If an error response is returned by actual LargePayloadStore indicating
+     * @throws AmazonServiceException If an error response is returned by actual PayloadStore indicating
      *                                a server side issue.
      */
     void deleteOriginalPayload(String payloadPointer);

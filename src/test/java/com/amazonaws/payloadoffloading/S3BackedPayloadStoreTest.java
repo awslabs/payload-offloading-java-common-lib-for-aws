@@ -1,4 +1,4 @@
-package com.amazonaws.largepayloadoffloading;
+package com.amazonaws.payloadoffloading;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
@@ -16,14 +16,14 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(JUnitParamsRunner.class)
-public class S3BackedLargePayloadStoreTest {
+public class S3BackedPayloadStoreTest {
     private static final String S3_BUCKET_NAME = "test-bucket-name";
     private static final String S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID = "test-customer-managed-kms-key-id";
     private static final String ANY_LARGE_PAYLOAD = "AnyPayload";
     private static final String ANY_S3_KEY = "AnyS3key";
     private static final String INCORRECT_POINTER_EXCEPTION_MSG = "Failed to read the S3 object pointer from given string";
     private static final Long ANY_LARGE_PAYLOAD_LENGTH = 300000L;
-    private LargePayloadStore largePayloadStore;
+    private PayloadStore payloadStore;
     private S3Dao s3Dao;
 
     @Rule
@@ -32,7 +32,7 @@ public class S3BackedLargePayloadStoreTest {
     @Before
     public void setup() {
         s3Dao = mock(S3Dao.class);
-        largePayloadStore = new S3BackedLargePayloadStore(s3Dao, S3_BUCKET_NAME);
+        payloadStore = new S3BackedPayloadStore(s3Dao, S3_BUCKET_NAME);
     }
 
     private Object[] testData() {
@@ -47,19 +47,19 @@ public class S3BackedLargePayloadStoreTest {
         return new Object[][]{
                 // No S3 SSE-KMS encryption
                 {
-                    new S3BackedLargePayloadStore(noEncryptionS3Dao, S3_BUCKET_NAME),
+                    new S3BackedPayloadStore(noEncryptionS3Dao, S3_BUCKET_NAME),
                     null,
                     noEncryptionS3Dao
                 },
                 // S3 SSE-KMS encryption with AWS managed KMS keys
                 {
-                    new S3BackedLargePayloadStore(defaultEncryptionS3Dao, S3_BUCKET_NAME, new SSEAwsKeyManagementParams()),
+                    new S3BackedPayloadStore(defaultEncryptionS3Dao, S3_BUCKET_NAME, new SSEAwsKeyManagementParams()),
                     new SSEAwsKeyManagementParams(),
                     defaultEncryptionS3Dao
                 },
                 // S3 SSE-KMS encryption with customer managed KMS key
                 {
-                    new S3BackedLargePayloadStore(customerKMSKeyEncryptionS3Dao, S3_BUCKET_NAME,
+                    new S3BackedPayloadStore(customerKMSKeyEncryptionS3Dao, S3_BUCKET_NAME,
                         new SSEAwsKeyManagementParams(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID)),
                     new SSEAwsKeyManagementParams(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID),
                     customerKMSKeyEncryptionS3Dao
@@ -69,9 +69,9 @@ public class S3BackedLargePayloadStoreTest {
 
     @Test
     @Parameters(method = "testData")
-    public void testStoreOriginalPayloadOnSuccess(LargePayloadStore largePayloadStore,
-                                                   SSEAwsKeyManagementParams expectedParams, S3Dao mockS3Dao) {
-        String actualPayloadPointer = largePayloadStore.storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
+    public void testStoreOriginalPayloadOnSuccess(PayloadStore payloadStore,
+                                                  SSEAwsKeyManagementParams expectedParams, S3Dao mockS3Dao) {
+        String actualPayloadPointer = payloadStore.storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
 
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<SSEAwsKeyManagementParams> sseArgsCaptor = ArgumentCaptor.forClass(SSEAwsKeyManagementParams.class);
@@ -91,15 +91,15 @@ public class S3BackedLargePayloadStoreTest {
 
     @Test
     @Parameters(method = "testData")
-    public void testStoreOriginalPayloadDoesAlwaysCreateNewObjects(LargePayloadStore largePayloadStore,
-                                                                    SSEAwsKeyManagementParams expectedParams,
-                                                                    S3Dao mockS3Dao) {
+    public void testStoreOriginalPayloadDoesAlwaysCreateNewObjects(PayloadStore payloadStore,
+                                                                   SSEAwsKeyManagementParams expectedParams,
+                                                                   S3Dao mockS3Dao) {
         //Store any payload
-        String anyActualPayloadPointer = largePayloadStore
+        String anyActualPayloadPointer = payloadStore
                 .storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
 
         //Store any other payload and validate that the pointers are different
-        String anyOtherActualPayloadPointer = largePayloadStore
+        String anyOtherActualPayloadPointer = payloadStore
                 .storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
 
         ArgumentCaptor<String> anyOtherKeyCaptor = ArgumentCaptor.forClass(String.class);
@@ -133,8 +133,8 @@ public class S3BackedLargePayloadStoreTest {
 
     @Test
     @Parameters(method = "testData")
-    public void testStoreOriginalPayloadOnS3Failure(LargePayloadStore largePayloadStore,
-                                                     SSEAwsKeyManagementParams expectedParams, S3Dao mockS3Dao) {
+    public void testStoreOriginalPayloadOnS3Failure(PayloadStore payloadStore,
+                                                    SSEAwsKeyManagementParams expectedParams, S3Dao mockS3Dao) {
         doThrow(new AmazonClientException("S3 Exception"))
                 .when(mockS3Dao)
                 .storeTextInS3(
@@ -147,14 +147,14 @@ public class S3BackedLargePayloadStoreTest {
         exception.expect(AmazonClientException.class);
         exception.expectMessage("S3 Exception");
         //Any S3 Dao exception is thrown back as-is to clients
-        largePayloadStore.storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
+        payloadStore.storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
     }
 
     @Test
     public void testGetOriginalPayloadOnSuccess() {
         PayloadS3Pointer anyPointer = new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY);
         when(s3Dao.getTextFromS3(any(String.class), any(String.class))).thenReturn(ANY_LARGE_PAYLOAD);
-        String actualPayload = largePayloadStore.getOriginalPayload(anyPointer.toJson());
+        String actualPayload = payloadStore.getOriginalPayload(anyPointer.toJson());
 
         ArgumentCaptor<String> bucketNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
@@ -170,7 +170,7 @@ public class S3BackedLargePayloadStoreTest {
         exception.expect(AmazonClientException.class);
         exception.expectMessage(INCORRECT_POINTER_EXCEPTION_MSG);
         //Any S3 Dao exception is thrown back as-is to clients
-        largePayloadStore.getOriginalPayload("IncorrectPointer");
+        payloadStore.getOriginalPayload("IncorrectPointer");
         verifyNoInteractions(s3Dao);
     }
 
@@ -181,13 +181,13 @@ public class S3BackedLargePayloadStoreTest {
         exception.expectMessage("S3 Exception");
         //Any S3 Dao exception is thrown back as-is to clients
         PayloadS3Pointer anyPointer = new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY);
-        largePayloadStore.getOriginalPayload(anyPointer.toJson());
+        payloadStore.getOriginalPayload(anyPointer.toJson());
     }
 
     @Test
     public void testDeleteOriginalPayloadOnSuccess() {
         PayloadS3Pointer anyPointer = new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY);
-        largePayloadStore.deleteOriginalPayload(anyPointer.toJson());
+        payloadStore.deleteOriginalPayload(anyPointer.toJson());
 
         ArgumentCaptor<String> bucketNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
@@ -201,7 +201,7 @@ public class S3BackedLargePayloadStoreTest {
     public void testDeleteOriginalPayloadIncorrectPointer() {
         exception.expect(AmazonClientException.class);
         exception.expectMessage(INCORRECT_POINTER_EXCEPTION_MSG);
-        largePayloadStore.deleteOriginalPayload("IncorrectPointer");
+        payloadStore.deleteOriginalPayload("IncorrectPointer");
         verifyNoInteractions(s3Dao);
     }
 }

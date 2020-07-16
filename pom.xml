@@ -10,10 +10,10 @@
     <packaging>jar</packaging>
     <name>Large payload offloading common library for AWS</name>
     <description>Common library between extended Amazon AWS clients to save payloads up to 2GB on Amazon S3.</description>
-    <url>https://github.com/awslabs/large-payload-offloading-java-common-lib-for-aws</url>
+    <url>https://github.com/awslabs/payload-offloading-java-common-lib-for-aws</url>
 
     <scm>
-        <url>https://github.com/awslabs/large-payload-offloading-java-common-lib-for-aws</url>
+        <url>https://github.com/awslabs/payload-offloading-java-common-lib-for-aws</url>
     </scm>
 
     <licenses>

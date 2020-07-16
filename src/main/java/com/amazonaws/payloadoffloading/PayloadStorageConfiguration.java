@@ -1,4 +1,4 @@
-package com.amazonaws.largepayloadoffloading;
+package com.amazonaws.payloadoffloading;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.annotation.NotThreadSafe;
@@ -8,104 +8,104 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Amazon large payload storage configuration options such as Amazon S3 client,
- * bucket name, and payload size threshold for large payloads.
+ * Amazon payload storage configuration options such as Amazon S3 client,
+ * bucket name, and payload size threshold for payloads.
  */
 @NotThreadSafe
-public class LargePayloadStorageConfiguration {
-    private static final Log LOG = LogFactory.getLog(LargePayloadStorageConfiguration.class);
+public class PayloadStorageConfiguration {
+    private static final Log LOG = LogFactory.getLog(PayloadStorageConfiguration.class);
 
     private AmazonS3 s3;
     private String s3BucketName;
     private int payloadSizeThreshold = 0;
     private boolean alwaysThroughS3 = false;
-    private boolean largePayloadSupport = false;
+    private boolean payloadSupport = false;
     /**
      * This field is optional, it is set only when we want to configure S3 Server Side Encryption with KMS.
      */
     private SSEAwsKeyManagementParams sseAwsKeyManagementParams;
 
-    public LargePayloadStorageConfiguration() {
+    public PayloadStorageConfiguration() {
         s3 = null;
         s3BucketName = null;
         sseAwsKeyManagementParams = null;
     }
 
-    public LargePayloadStorageConfiguration(LargePayloadStorageConfiguration other) {
+    public PayloadStorageConfiguration(PayloadStorageConfiguration other) {
         this.s3 = other.getAmazonS3Client();
         this.s3BucketName = other.getS3BucketName();
         this.sseAwsKeyManagementParams = other.getSSEAwsKeyManagementParams();
-        this.largePayloadSupport = other.isLargePayloadSupportEnabled();
+        this.payloadSupport = other.isPayloadSupportEnabled();
         this.alwaysThroughS3 = other.isAlwaysThroughS3();
         this.payloadSizeThreshold = other.getPayloadSizeThreshold();
     }
 
     /**
-     * Enables support for large payloads .
+     * Enables support for payloads .
      *
-     * @param s3           Amazon S3 client which is going to be used for storing large payload.
-     * @param s3BucketName Name of the bucket which is going to be used for storing large payload.
+     * @param s3           Amazon S3 client which is going to be used for storing payload.
+     * @param s3BucketName Name of the bucket which is going to be used for storing payload.
      *                     The bucket must be already created and configured in s3.
      */
-    public void setLargePayloadSupportEnabled(AmazonS3 s3, String s3BucketName) {
+    public void setPayloadSupportEnabled(AmazonS3 s3, String s3BucketName) {
         if (s3 == null || s3BucketName == null) {
             String errorMessage = "S3 client and/or S3 bucket name cannot be null.";
             LOG.error(errorMessage);
             throw new AmazonClientException(errorMessage);
         }
-        if (isLargePayloadSupportEnabled()) {
-            LOG.warn("Large-payload support is already enabled. Overwriting AmazonS3Client and S3BucketName.");
+        if (isPayloadSupportEnabled()) {
+            LOG.warn("Payload support is already enabled. Overwriting AmazonS3Client and S3BucketName.");
         }
         this.s3 = s3;
         this.s3BucketName = s3BucketName;
-        this.largePayloadSupport = true;
-        LOG.info("Large-payload support enabled.");
+        this.payloadSupport = true;
+        LOG.info("Payload support enabled.");
     }
 
     /**
-     * Enables support for large payload.
+     * Enables support for payload.
      *
-     * @param s3           Amazon S3 client which is going to be used for storing large payloads.
-     * @param s3BucketName Name of the bucket which is going to be used for storing large payloads.
+     * @param s3           Amazon S3 client which is going to be used for storing payloads.
+     * @param s3BucketName Name of the bucket which is going to be used for storing payloads.
      *                     The bucket must be already created and configured in s3.
-     * @return the updated LargePayloadStorageConfiguration object.
+     * @return the updated PayloadStorageConfiguration object.
      */
-    public LargePayloadStorageConfiguration withLargePayloadSupportEnabled(AmazonS3 s3, String s3BucketName) {
-        setLargePayloadSupportEnabled(s3, s3BucketName);
+    public PayloadStorageConfiguration withPayloadSupportEnabled(AmazonS3 s3, String s3BucketName) {
+        setPayloadSupportEnabled(s3, s3BucketName);
         return this;
     }
 
     /**
-     * Disables support for large payloads.
+     * Disables support for payloads.
      */
-    public void setLargePayloadSupportDisabled() {
+    public void setPayloadSupportDisabled() {
         s3 = null;
         s3BucketName = null;
-        largePayloadSupport = false;
-        LOG.info("Large-payload support disabled.");
+        payloadSupport = false;
+        LOG.info("Payload support disabled.");
     }
 
     /**
-     * Disables support for large payload.
+     * Disables support for payload.
      *
-     * @return the updated LargePayloadStorageConfiguration object.
+     * @return the updated PayloadStorageConfiguration object.
      */
-    public LargePayloadStorageConfiguration withLargePayloadSupportDisabled() {
-        setLargePayloadSupportDisabled();
+    public PayloadStorageConfiguration withPayloadSupportDisabled() {
+        setPayloadSupportDisabled();
         return this;
     }
 
     /**
-     * Check if the support for large payloads if enabled.
+     * Check if the support for payloads if enabled.
      *
-     * @return true if support for large payloads is enabled.
+     * @return true if support for payloads is enabled.
      */
-    public boolean isLargePayloadSupportEnabled() {
-        return largePayloadSupport;
+    public boolean isPayloadSupportEnabled() {
+        return payloadSupport;
     }
 
     /**
-     * Gets the Amazon S3 client which is being used for storing large payloads.
+     * Gets the Amazon S3 client which is being used for storing payloads.
      *
      * @return Reference to the Amazon S3 client which is being used.
      */
@@ -114,7 +114,7 @@ public class LargePayloadStorageConfiguration {
     }
 
     /**
-     * Gets the name of the S3 bucket which is being used for storing large payload.
+     * Gets the name of the S3 bucket which is being used for storing payload.
      *
      * @return The name of the bucket which is being used.
      */
@@ -144,9 +144,9 @@ public class LargePayloadStorageConfiguration {
      * Sets the the S3 SSE-KMS encryption params of S3 objects under configured S3 bucket name.
      *
      * @param sseAwsKeyManagementParams The S3 SSE-KMS params used for encryption.
-     * @return the updated LargePayloadStorageConfiguration object
+     * @return the updated PayloadStorageConfiguration object
      */
-    public LargePayloadStorageConfiguration withSSEAwsKeyManagementParams(SSEAwsKeyManagementParams sseAwsKeyManagementParams) {
+    public PayloadStorageConfiguration withSSEAwsKeyManagementParams(SSEAwsKeyManagementParams sseAwsKeyManagementParams) {
         setSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
         return this;
     }
@@ -156,9 +156,9 @@ public class LargePayloadStorageConfiguration {
      *
      * @param payloadSizeThreshold Payload size threshold to be used for storing in Amazon S3.
      *                             Default: 256KB.
-     * @return the updated LargePayloadStorageConfiguration object.
+     * @return the updated PayloadStorageConfiguration object.
      */
-    public LargePayloadStorageConfiguration withPayloadSizeThreshold(int payloadSizeThreshold) {
+    public PayloadStorageConfiguration withPayloadSizeThreshold(int payloadSizeThreshold) {
         setPayloadSizeThreshold(payloadSizeThreshold);
         return this;
     }
@@ -187,9 +187,9 @@ public class LargePayloadStorageConfiguration {
      *
      * @param alwaysThroughS3 Whether or not all payloads regardless of their size
      *                        should be stored in Amazon S3. Default: false
-     * @return the updated LargePayloadStorageConfiguration object.
+     * @return the updated PayloadStorageConfiguration object.
      */
-    public LargePayloadStorageConfiguration withAlwaysThroughS3(boolean alwaysThroughS3) {
+    public PayloadStorageConfiguration withAlwaysThroughS3(boolean alwaysThroughS3) {
         setAlwaysThroughS3(alwaysThroughS3);
         return this;
     }

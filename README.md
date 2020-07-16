@@ -1,6 +1,6 @@
-## Large Payload Offloading Java Common Library For AWS
+## Payload Offloading Java Common Library For AWS
 
-The **Large Payload Offloading Java Common Library For AWS** enables you to manage payloads with Amazon S3. 
+The **Payload Offloading Java Common Library For AWS** enables you to manage payloads with Amazon S3. 
 For example, this is useful for storing and retrieving payloads with size greater than the current SQS/SNS limit of 256 KB, up to a maximum of 2 GB.
  
 You can use this library to:

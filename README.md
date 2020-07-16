@@ -21,8 +21,8 @@ You can download release builds through the [releases section of this](https://g
 
 ```xml
   <dependency>
-    <groupId>com.amazonaws</groupId>
-    <artifactId>large-payload-offloading-java-common-lib-for-aws</artifactId>
+    <groupId>software.amazon.payloadoffloading</groupId>
+    <artifactId>payloadoffloading-common</artifactId>
     <version>1.0.0</version>
     <type>jar</type>
   </dependency>

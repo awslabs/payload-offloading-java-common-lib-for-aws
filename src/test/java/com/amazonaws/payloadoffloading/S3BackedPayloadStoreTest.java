@@ -19,10 +19,10 @@ import static org.mockito.Mockito.*;
 public class S3BackedPayloadStoreTest {
     private static final String S3_BUCKET_NAME = "test-bucket-name";
     private static final String S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID = "test-customer-managed-kms-key-id";
-    private static final String ANY_LARGE_PAYLOAD = "AnyPayload";
+    private static final String ANY_PAYLOAD = "AnyPayload";
     private static final String ANY_S3_KEY = "AnyS3key";
     private static final String INCORRECT_POINTER_EXCEPTION_MSG = "Failed to read the S3 object pointer from given string";
-    private static final Long ANY_LARGE_PAYLOAD_LENGTH = 300000L;
+    private static final Long ANY_PAYLOAD_LENGTH = 300000L;
     private PayloadStore payloadStore;
     private S3Dao s3Dao;
 
@@ -39,7 +39,7 @@ public class S3BackedPayloadStoreTest {
         // Here, we create separate mock of S3Dao because JUnitParamsRunner collects parameters
         // for tests well before invocation of @Before or @BeforeClass methods.
         // That means our default s3Dao mock isn't instantiated until then. For parameterized tests,
-        // we instantiate our local S3Dao mock per combination, pass it to S3BackedLargePayloadStore and also pass it
+        // we instantiate our local S3Dao mock per combination, pass it to S3BackedPayloadStore and also pass it
         // as test parameter to allow verifying calls to the mockS3Dao.
         S3Dao noEncryptionS3Dao = mock(S3Dao.class);
         S3Dao defaultEncryptionS3Dao = mock(S3Dao.class);
@@ -71,13 +71,13 @@ public class S3BackedPayloadStoreTest {
     @Parameters(method = "testData")
     public void testStoreOriginalPayloadOnSuccess(PayloadStore payloadStore,
                                                   SSEAwsKeyManagementParams expectedParams, S3Dao mockS3Dao) {
-        String actualPayloadPointer = payloadStore.storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
+        String actualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD, ANY_PAYLOAD_LENGTH);
 
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<SSEAwsKeyManagementParams> sseArgsCaptor = ArgumentCaptor.forClass(SSEAwsKeyManagementParams.class);
 
         verify(mockS3Dao, times(1)).storeTextInS3(eq(S3_BUCKET_NAME), keyCaptor.capture(),
-                sseArgsCaptor.capture(), eq(ANY_LARGE_PAYLOAD), eq(ANY_LARGE_PAYLOAD_LENGTH));
+                sseArgsCaptor.capture(), eq(ANY_PAYLOAD), eq(ANY_PAYLOAD_LENGTH));
 
         PayloadS3Pointer expectedPayloadPointer = new PayloadS3Pointer(S3_BUCKET_NAME, keyCaptor.getValue());
         assertEquals(expectedPayloadPointer.toJson(), actualPayloadPointer);
@@ -96,11 +96,11 @@ public class S3BackedPayloadStoreTest {
                                                                    S3Dao mockS3Dao) {
         //Store any payload
         String anyActualPayloadPointer = payloadStore
-                .storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
+                .storeOriginalPayload(ANY_PAYLOAD, ANY_PAYLOAD_LENGTH);
 
         //Store any other payload and validate that the pointers are different
         String anyOtherActualPayloadPointer = payloadStore
-                .storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
+                .storeOriginalPayload(ANY_PAYLOAD, ANY_PAYLOAD_LENGTH);
 
         ArgumentCaptor<String> anyOtherKeyCaptor = ArgumentCaptor.forClass(String.class);
 
@@ -108,7 +108,7 @@ public class S3BackedPayloadStoreTest {
                 .forClass(SSEAwsKeyManagementParams.class);
 
         verify(mockS3Dao, times(2)).storeTextInS3(eq(S3_BUCKET_NAME), anyOtherKeyCaptor.capture(),
-                sseArgsCaptor.capture(), eq(ANY_LARGE_PAYLOAD), eq(ANY_LARGE_PAYLOAD_LENGTH));
+                sseArgsCaptor.capture(), eq(ANY_PAYLOAD), eq(ANY_PAYLOAD_LENGTH));
 
         String anyS3Key = anyOtherKeyCaptor.getAllValues().get(0);
         String anyOtherS3Key = anyOtherKeyCaptor.getAllValues().get(1);
@@ -147,13 +147,13 @@ public class S3BackedPayloadStoreTest {
         exception.expect(AmazonClientException.class);
         exception.expectMessage("S3 Exception");
         //Any S3 Dao exception is thrown back as-is to clients
-        payloadStore.storeOriginalPayload(ANY_LARGE_PAYLOAD, ANY_LARGE_PAYLOAD_LENGTH);
+        payloadStore.storeOriginalPayload(ANY_PAYLOAD, ANY_PAYLOAD_LENGTH);
     }
 
     @Test
     public void testGetOriginalPayloadOnSuccess() {
         PayloadS3Pointer anyPointer = new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY);
-        when(s3Dao.getTextFromS3(any(String.class), any(String.class))).thenReturn(ANY_LARGE_PAYLOAD);
+        when(s3Dao.getTextFromS3(any(String.class), any(String.class))).thenReturn(ANY_PAYLOAD);
         String actualPayload = payloadStore.getOriginalPayload(anyPointer.toJson());
 
         ArgumentCaptor<String> bucketNameCaptor = ArgumentCaptor.forClass(String.class);
@@ -162,7 +162,7 @@ public class S3BackedPayloadStoreTest {
 
         assertEquals(ANY_S3_KEY, keyCaptor.getValue());
         assertEquals(S3_BUCKET_NAME, bucketNameCaptor.getValue());
-        assertEquals(ANY_LARGE_PAYLOAD, actualPayload);
+        assertEquals(ANY_PAYLOAD, actualPayload);
     }
 
     @Test

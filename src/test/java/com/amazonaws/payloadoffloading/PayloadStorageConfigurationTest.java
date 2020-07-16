@@ -9,7 +9,7 @@ import static org.mockito.Mockito.mock;
 import static org.junit.Assert.*;
 
 /**
- * Tests the LargePayloadStorageConfiguration class.
+ * Tests the PayloadStorageConfiguration class.
  */
 public class PayloadStorageConfigurationTest {
 
@@ -48,7 +48,7 @@ public class PayloadStorageConfigurationTest {
     }
 
     @Test
-    public void testLargePayloadSupportEnabled() {
+    public void testPayloadSupportEnabled() {
         AmazonS3 s3 = mock(AmazonS3.class);        
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
         payloadStorageConfiguration.setPayloadSupportEnabled(s3, s3BucketName);
@@ -59,7 +59,7 @@ public class PayloadStorageConfigurationTest {
     }
 
     @Test
-    public void testDisableLargePayloadSupport() {
+    public void testDisablePayloadSupport() {
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
         payloadStorageConfiguration.setPayloadSupportDisabled();
 

@@ -1,4 +1,4 @@
-package com.amazonaws.payloadoffloading;
+package software.amazon.payloadoffloading;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;

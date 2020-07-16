@@ -1,4 +1,4 @@
-package com.amazonaws.payloadoffloading;
+package software.amazon.payloadoffloading;
 
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import org.apache.commons.logging.Log;

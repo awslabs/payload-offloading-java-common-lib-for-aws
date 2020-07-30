@@ -1,111 +1,95 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.*;
-import com.amazonaws.util.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
+import software.amazon.awssdk.utils.IoUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Dao layer to access S3.
  */
 public class S3Dao {
-    private static final Log LOG = LogFactory.getLog(S3Dao.class);
-    private final AmazonS3 s3Client;
+    private static final Logger LOG = LoggerFactory.getLogger(S3Dao.class);
+    private final S3Client s3Client;
 
-    public S3Dao(AmazonS3 s3Client) {
+    public S3Dao(S3Client s3Client) {
         this.s3Client = s3Client;
     }
 
     public String getTextFromS3(String s3BucketName, String s3Key) {
-        GetObjectRequest getObjectRequest = new GetObjectRequest(s3BucketName, s3Key);
-        String embeddedText = null;
-        S3Object obj = null;
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(s3BucketName)
+                .key(s3Key)
+                .build();
 
+        ResponseInputStream<GetObjectResponse> object = null;
         try {
-            obj = s3Client.getObject(getObjectRequest);
-
-        } catch (AmazonServiceException e) {
+            object = s3Client.getObject(getObjectRequest);
+        } catch (SdkException e) {
             String errorMessage = "Failed to get the S3 object which contains the payload.";
             LOG.error(errorMessage, e);
-            throw new AmazonServiceException(errorMessage, e);
-
-        } catch (AmazonClientException e) {
-            String errorMessage = "Failed to get the S3 object which contains the payload.";
-            LOG.error(errorMessage, e);
-            throw new AmazonClientException(errorMessage, e);
+            throw SdkException.create(errorMessage, e);
         }
 
-        S3ObjectInputStream is = obj.getObjectContent();
-
+        String embeddedText;
         try {
-            embeddedText = IOUtils.toString(is);
-
+            embeddedText = IoUtils.toUtf8String(object);
         } catch (IOException e) {
             String errorMessage = "Failure when handling the message which was read from S3 object.";
             LOG.error(errorMessage, e);
-            throw new AmazonClientException(errorMessage, e);
+            throw SdkClientException.create(errorMessage, e);
 
         } finally {
-            IOUtils.closeQuietly(is, LOG);
+            IoUtils.closeQuietly(object, LOG);
         }
 
         return embeddedText;
     }
 
-    public void storeTextInS3(String s3BucketName, String s3Key, SSEAwsKeyManagementParams sseAwsKeyManagementParams,
-                              String payloadContentStr, Long payloadContentSize) {
-        InputStream payloadContentStream = new ByteArrayInputStream(payloadContentStr.getBytes(StandardCharsets.UTF_8));
-        ObjectMetadata payloadContentStreamMetadata = new ObjectMetadata();
-        payloadContentStreamMetadata.setContentLength(payloadContentSize);
-        PutObjectRequest putObjectRequest = new PutObjectRequest(s3BucketName, s3Key,
-                payloadContentStream, payloadContentStreamMetadata);
+    public void storeTextInS3(String s3BucketName, String s3Key, String awsKmsKeyId, String payloadContentStr) {
+        PutObjectRequest.Builder putObjectRequestBuilder = PutObjectRequest.builder()
+                .bucket(s3BucketName)
+                .key(s3Key);
 
         // https://docs.aws.amazon.com/AmazonS3/latest/dev/kms-using-sdks.html
-        if (sseAwsKeyManagementParams != null) {
+        if (awsKmsKeyId != null) {
             LOG.debug("Using SSE-KMS in put object request.");
-            putObjectRequest.setSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
+            putObjectRequestBuilder.ssekmsKeyId(awsKmsKeyId);
+            putObjectRequestBuilder.serverSideEncryption(ServerSideEncryption.AWS_KMS);
         }
 
         try {
-            s3Client.putObject(putObjectRequest);
-
-        } catch (AmazonServiceException e) {
+            s3Client.putObject(putObjectRequestBuilder.build(), RequestBody.fromString(payloadContentStr));
+        } catch (SdkException e) {
             String errorMessage = "Failed to store the message content in an S3 object.";
             LOG.error(errorMessage, e);
-            throw new AmazonServiceException(errorMessage, e);
-
-        } catch (AmazonClientException e) {
-            String errorMessage = "Failed to store the message content in an S3 object.";
-            LOG.error(errorMessage, e);
-            throw new AmazonClientException(errorMessage, e);
+            throw SdkException.create(errorMessage, e);
         }
-    }
-
-    public void storeTextInS3(String s3BucketName, String s3Key, String payloadContentStr, Long payloadContentSize) {
-        storeTextInS3(s3BucketName, s3Key, null, payloadContentStr, payloadContentSize);
     }
 
     public void deletePayloadFromS3(String s3BucketName, String s3Key) {
         try {
-            s3Client.deleteObject(s3BucketName, s3Key);
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(s3BucketName)
+                    .key(s3Key)
+                    .build();
+            s3Client.deleteObject(deleteObjectRequest);
 
-        } catch (AmazonServiceException e) {
+        } catch (SdkException e) {
             String errorMessage = "Failed to delete the S3 object which contains the payload";
             LOG.error(errorMessage, e);
-            throw new AmazonServiceException(errorMessage, e);
-
-        } catch (AmazonClientException e) {
-            String errorMessage = "Failed to delete the S3 object which contains the payload";
-            LOG.error(errorMessage, e);
-            throw new AmazonClientException(errorMessage, e);
+            throw SdkException.create(errorMessage, e);
         }
 
         LOG.info("S3 object deleted, Bucket name: " + s3BucketName + ", Object key: " + s3Key + ".");

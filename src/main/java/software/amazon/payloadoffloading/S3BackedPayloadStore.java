@@ -1,8 +1,7 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.UUID;
 
@@ -10,29 +9,28 @@ import java.util.UUID;
  * S3 based implementation for PayloadStore.
  */
 public class S3BackedPayloadStore implements PayloadStore {
-    private static final Log LOG = LogFactory.getLog(S3BackedPayloadStore.class);
+    private static final Logger LOG = LoggerFactory.getLogger(S3BackedPayloadStore.class);
 
     private final String s3BucketName;
     private final S3Dao s3Dao;
-    private final SSEAwsKeyManagementParams sseAwsKeyManagementParams;
+    private final String awsKmsKeyId;
 
     public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName) {
         this(s3Dao, s3BucketName, null);
     }
 
-    public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName,
-                                SSEAwsKeyManagementParams sseAwsKeyManagementParams) {
+    public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName, String awsKmsKeyId) {
         this.s3BucketName = s3BucketName;
         this.s3Dao = s3Dao;
-        this.sseAwsKeyManagementParams = sseAwsKeyManagementParams;
+        this.awsKmsKeyId = awsKmsKeyId;
     }
 
     @Override
-    public String storeOriginalPayload(String payload, Long payloadContentSize) {
+    public String storeOriginalPayload(String payload) {
         String s3Key = UUID.randomUUID().toString();
 
         // Store the payload content in S3.
-        s3Dao.storeTextInS3(s3BucketName, s3Key, sseAwsKeyManagementParams, payload, payloadContentSize);
+        s3Dao.storeTextInS3(s3BucketName, s3Key, awsKmsKeyId, payload);
         LOG.info("S3 object created, Bucket name: " + s3BucketName + ", Object key: " + s3Key + ".");
 
         // Convert S3 pointer (bucket name, key, etc) to JSON string

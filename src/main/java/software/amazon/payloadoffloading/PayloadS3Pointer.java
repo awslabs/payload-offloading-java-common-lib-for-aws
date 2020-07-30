@@ -1,14 +1,14 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.AmazonClientException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
 /**
  * This class is used for carrying pointer to Amazon S3 objects which contain payloads.
  */
 public class PayloadS3Pointer {
-    private static final Log LOG = LogFactory.getLog(PayloadS3Pointer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PayloadS3Pointer.class);
     private String s3BucketName;
     private String s3Key;
 
@@ -38,7 +38,7 @@ public class PayloadS3Pointer {
         } catch (Exception e) {
             String errorMessage = "Failed to convert S3 object pointer to text.";
             LOG.error(errorMessage, e);
-            throw new AmazonClientException(errorMessage, e);
+            throw SdkClientException.create(errorMessage, e);
         }
         return s3PointerStr;
     }
@@ -52,7 +52,7 @@ public class PayloadS3Pointer {
         } catch (Exception e) {
             String errorMessage = "Failed to read the S3 object pointer from given string.";
             LOG.error(errorMessage, e);
-            throw new AmazonClientException(errorMessage, e);
+            throw SdkClientException.create(errorMessage, e);
         }
         return s3Pointer;
     }

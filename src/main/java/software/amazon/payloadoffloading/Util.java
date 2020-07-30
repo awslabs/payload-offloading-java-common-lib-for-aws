@@ -1,22 +1,23 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.util.VersionInfoUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.util.VersionInfo;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 
 public class Util {
-    private static final Log LOG = LogFactory.getLog(Util.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Util.class);
 
     public static long getStringSizeInBytes(String str) {
         CountingOutputStream counterOutputStream = new CountingOutputStream();
 
         try {
-            Writer writer = new OutputStreamWriter(counterOutputStream, "UTF-8");
+            Writer writer = new OutputStreamWriter(counterOutputStream, StandardCharsets.UTF_8);
             writer.write(str);
             writer.flush();
             writer.close();
@@ -24,13 +25,13 @@ public class Util {
         } catch (IOException e) {
             String errorMessage = "Failed to calculate the size of payload.";
             LOG.error(errorMessage, e);
-            throw new AmazonClientException(errorMessage, e);
+            throw SdkClientException.create(errorMessage, e);
         }
 
         return counterOutputStream.getTotalSize();
     }
 
     public static String getUserAgentHeader(String clientName) {
-        return clientName + "/" + VersionInfoUtils.getVersion();
+        return clientName + "/" + VersionInfo.SDK_VERSION;
     }
 }

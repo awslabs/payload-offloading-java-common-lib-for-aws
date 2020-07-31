@@ -11,7 +11,6 @@ import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 import software.amazon.awssdk.utils.IoUtils;
 
 import java.io.IOException;
@@ -57,16 +56,14 @@ public class S3Dao {
         return embeddedText;
     }
 
-    public void storeTextInS3(String s3BucketName, String s3Key, String awsKmsKeyId, String payloadContentStr) {
+    public void storeTextInS3(String s3BucketName, String s3Key, ServerSideEncryptionStrategy serverSideEncryptionStrategy, String payloadContentStr) {
         PutObjectRequest.Builder putObjectRequestBuilder = PutObjectRequest.builder()
                 .bucket(s3BucketName)
                 .key(s3Key);
 
         // https://docs.aws.amazon.com/AmazonS3/latest/dev/kms-using-sdks.html
-        if (awsKmsKeyId != null) {
-            LOG.debug("Using SSE-KMS in put object request.");
-            putObjectRequestBuilder.ssekmsKeyId(awsKmsKeyId);
-            putObjectRequestBuilder.serverSideEncryption(ServerSideEncryption.AWS_KMS);
+        if (serverSideEncryptionStrategy != null) {
+            serverSideEncryptionStrategy.decorate(putObjectRequestBuilder);
         }
 
         try {

@@ -22,6 +22,8 @@ import static org.mockito.Mockito.*;
 public class S3BackedPayloadStoreTest {
     private static final String S3_BUCKET_NAME = "test-bucket-name";
     private static final String S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID = "test-customer-managed-kms-key-id";
+    private static final ServerSideEncryptionStrategy KMS_WITH_CUSTOMER_KEY = ServerSideEncryptionFactory.customerKey(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID);
+    private static final ServerSideEncryptionStrategy KMS_WITH_AWS_MANAGED_CMK = ServerSideEncryptionFactory.awsManagedCmk();
     private static final String ANY_PAYLOAD = "AnyPayload";
     private static final String ANY_S3_KEY = "AnyS3key";
     private static final String INCORRECT_POINTER_EXCEPTION_MSG = "Failed to read the S3 object pointer from given string";
@@ -55,16 +57,15 @@ public class S3BackedPayloadStoreTest {
                     noEncryptionS3Dao
                 },
                 // S3 SSE-KMS encryption with AWS managed KMS keys
-                // TODO MS Not sure how to implement this - customer wants to use their default KMS key
-//                {
-//                    new S3BackedPayloadStore(defaultEncryptionS3Dao, S3_BUCKET_NAME, S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID),
-//                    S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID,
-//                    defaultEncryptionS3Dao
-//                },
+                {
+                    new S3BackedPayloadStore(defaultEncryptionS3Dao, S3_BUCKET_NAME, KMS_WITH_AWS_MANAGED_CMK),
+                    KMS_WITH_AWS_MANAGED_CMK,
+                    defaultEncryptionS3Dao
+                },
                 // S3 SSE-KMS encryption with customer managed KMS key
                 {
-                    new S3BackedPayloadStore(customerKMSKeyEncryptionS3Dao, S3_BUCKET_NAME, S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID),
-                    S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID,
+                    new S3BackedPayloadStore(customerKMSKeyEncryptionS3Dao, S3_BUCKET_NAME, KMS_WITH_CUSTOMER_KEY),
+                    KMS_WITH_CUSTOMER_KEY,
                     customerKMSKeyEncryptionS3Dao
                 }
         };
@@ -72,11 +73,11 @@ public class S3BackedPayloadStoreTest {
 
     @Test
     @Parameters(method = "testData")
-    public void testStoreOriginalPayloadOnSuccess(PayloadStore payloadStore, String expectedParams, S3Dao mockS3Dao) {
+    public void testStoreOriginalPayloadOnSuccess(PayloadStore payloadStore, ServerSideEncryptionStrategy expectedParams, S3Dao mockS3Dao) {
         String actualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD);
 
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> sseArgsCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<ServerSideEncryptionStrategy> sseArgsCaptor = ArgumentCaptor.forClass(ServerSideEncryptionStrategy.class);
 
         verify(mockS3Dao, times(1)).storeTextInS3(eq(S3_BUCKET_NAME), keyCaptor.capture(),
                 sseArgsCaptor.capture(), eq(ANY_PAYLOAD));
@@ -94,7 +95,7 @@ public class S3BackedPayloadStoreTest {
     @Test
     @Parameters(method = "testData")
     public void testStoreOriginalPayloadDoesAlwaysCreateNewObjects(PayloadStore payloadStore,
-                                                                   String expectedParams,
+                                                                   ServerSideEncryptionStrategy expectedParams,
                                                                    S3Dao mockS3Dao) {
         //Store any payload
         String anyActualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD);
@@ -103,7 +104,7 @@ public class S3BackedPayloadStoreTest {
         String anyOtherActualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD);
 
         ArgumentCaptor<String> anyOtherKeyCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> sseArgsCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<ServerSideEncryptionStrategy> sseArgsCaptor = ArgumentCaptor.forClass(ServerSideEncryptionStrategy.class);
 
         verify(mockS3Dao, times(2)).storeTextInS3(eq(S3_BUCKET_NAME), anyOtherKeyCaptor.capture(),
                 sseArgsCaptor.capture(), eq(ANY_PAYLOAD));
@@ -130,7 +131,7 @@ public class S3BackedPayloadStoreTest {
 
     @Test
     @Parameters(method = "testData")
-    public void testStoreOriginalPayloadOnS3Failure(PayloadStore payloadStore, String awsKmsKeyId, S3Dao mockS3Dao) {
+    public void testStoreOriginalPayloadOnS3Failure(PayloadStore payloadStore, ServerSideEncryptionStrategy awsKmsKeyId, S3Dao mockS3Dao) {
         doThrow(SdkException.create("S3 Exception", new Throwable()))
                 .when(mockS3Dao)
                 .storeTextInS3(

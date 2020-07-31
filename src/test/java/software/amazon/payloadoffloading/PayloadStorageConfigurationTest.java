@@ -13,6 +13,7 @@ public class PayloadStorageConfigurationTest {
 
     private static final String s3BucketName = "test-bucket-name";
     private static final String s3ServerSideEncryptionKMSKeyId = "test-customer-managed-kms-key-id";
+    private static final ServerSideEncryptionStrategy SERVER_SIDE_ENCRYPTION_STRATEGY = ServerSideEncryptionFactory.awsManagedCmk();
 
     @Test
     public void testCopyConstructor() {
@@ -26,13 +27,13 @@ public class PayloadStorageConfigurationTest {
         payloadStorageConfiguration.withPayloadSupportEnabled(s3, s3BucketName)
                 .withAlwaysThroughS3(alwaysThroughS3)
                 .withPayloadSizeThreshold(payloadSizeThreshold)
-                .withAwsKmsKeyId(s3ServerSideEncryptionKMSKeyId);
+                .withServiceSideEncryption(SERVER_SIDE_ENCRYPTION_STRATEGY);
 
         PayloadStorageConfiguration newPayloadStorageConfiguration = new PayloadStorageConfiguration(payloadStorageConfiguration);
 
         assertEquals(s3, newPayloadStorageConfiguration.getS3Client());
         assertEquals(s3BucketName, newPayloadStorageConfiguration.getS3BucketName());
-        assertEquals(s3ServerSideEncryptionKMSKeyId, newPayloadStorageConfiguration.getAwsKmsKeyId());
+        assertEquals(SERVER_SIDE_ENCRYPTION_STRATEGY, newPayloadStorageConfiguration.getServerSideEncryptionStrategy());
         assertTrue(newPayloadStorageConfiguration.isPayloadSupportEnabled());
         assertEquals(alwaysThroughS3, newPayloadStorageConfiguration.isAlwaysThroughS3());
         assertEquals(payloadSizeThreshold, newPayloadStorageConfiguration.getPayloadSizeThreshold());
@@ -74,9 +75,9 @@ public class PayloadStorageConfigurationTest {
     public void testSseAwsKeyManagementParams() {
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
 
-        assertNull(payloadStorageConfiguration.getAwsKmsKeyId());
+        assertNull(payloadStorageConfiguration.getServerSideEncryptionStrategy());
 
-        payloadStorageConfiguration.setAwsKmsKeyId(s3ServerSideEncryptionKMSKeyId);
-        assertEquals(s3ServerSideEncryptionKMSKeyId, payloadStorageConfiguration.getAwsKmsKeyId());
+        payloadStorageConfiguration.setServerSideEncryptionStrategy(SERVER_SIDE_ENCRYPTION_STRATEGY);
+        assertEquals(SERVER_SIDE_ENCRYPTION_STRATEGY, payloadStorageConfiguration.getServerSideEncryptionStrategy());
     }
 }

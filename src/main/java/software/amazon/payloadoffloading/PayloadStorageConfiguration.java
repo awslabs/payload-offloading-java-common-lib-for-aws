@@ -22,12 +22,12 @@ public class PayloadStorageConfiguration {
     /**
      * This field is optional, it is set only when we want to configure S3 Server Side Encryption with KMS.
      */
-    private String awsKmsKeyId;
+    private ServerSideEncryptionStrategy serverSideEncryptionStrategy;
 
     public PayloadStorageConfiguration() {
         s3 = null;
         s3BucketName = null;
-        awsKmsKeyId = null;
+        serverSideEncryptionStrategy = null;
     }
 
     public PayloadStorageConfiguration(PayloadStorageConfiguration other) {
@@ -36,7 +36,7 @@ public class PayloadStorageConfiguration {
         this.payloadSupport = other.isPayloadSupportEnabled();
         this.alwaysThroughS3 = other.isAlwaysThroughS3();
         this.payloadSizeThreshold = other.getPayloadSizeThreshold();
-        this.awsKmsKeyId = other.getAwsKmsKeyId();
+        this.serverSideEncryptionStrategy = other.getServerSideEncryptionStrategy();
     }
 
     /**
@@ -183,16 +183,17 @@ public class PayloadStorageConfiguration {
         this.alwaysThroughS3 = alwaysThroughS3;
     }
 
-    public PayloadStorageConfiguration withAwsKmsKeyId(String awsKmsKeyId) {
-        setAwsKmsKeyId(awsKmsKeyId);
+    public PayloadStorageConfiguration withServiceSideEncryption(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
+        setServerSideEncryptionStrategy(serverSideEncryptionStrategy);
         return this;
     }
 
-    public void setAwsKmsKeyId(String awsKmsKeyId) {
-        this.awsKmsKeyId = awsKmsKeyId;
+    public void setServerSideEncryptionStrategy(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
+        this.serverSideEncryptionStrategy = serverSideEncryptionStrategy;
     }
 
-    public String getAwsKmsKeyId() {
-        return this.awsKmsKeyId;
+    public ServerSideEncryptionStrategy getServerSideEncryptionStrategy() {
+        return this.serverSideEncryptionStrategy;
     }
+
 }

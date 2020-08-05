@@ -19,12 +19,21 @@ You can download release builds through the [releases section of this](https://g
 * **Minimum requirements** -- You'll need Java 8 (or later) and [Maven 3](http://maven.apache.org/).
 * **Download** -- Download the [latest preview release](https://github.com/awslabs/large-payload-offloading-java-common-lib-for-aws/releases) or pick it up from Maven:
 
+### Version 2.x
 ```xml
   <dependency>
     <groupId>software.amazon.payloadoffloading</groupId>
     <artifactId>payloadoffloading-common</artifactId>
     <version>2.0.0</version>
-    <type>jar</type>
+  </dependency>
+```   
+
+### Version 1.x
+```xml
+  <dependency>
+    <groupId>software.amazon.payloadoffloading</groupId>
+    <artifactId>payloadoffloading-common</artifactId>
+    <version>2.0.0</version>
   </dependency>
 ```                                                                                                                     
 

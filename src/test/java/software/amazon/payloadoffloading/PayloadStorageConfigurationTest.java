@@ -27,7 +27,7 @@ public class PayloadStorageConfigurationTest {
         payloadStorageConfiguration.withPayloadSupportEnabled(s3, s3BucketName)
                 .withAlwaysThroughS3(alwaysThroughS3)
                 .withPayloadSizeThreshold(payloadSizeThreshold)
-                .withServiceSideEncryption(SERVER_SIDE_ENCRYPTION_STRATEGY);
+                .withServerSideEncryption(SERVER_SIDE_ENCRYPTION_STRATEGY);
 
         PayloadStorageConfiguration newPayloadStorageConfiguration = new PayloadStorageConfiguration(payloadStorageConfiguration);
 

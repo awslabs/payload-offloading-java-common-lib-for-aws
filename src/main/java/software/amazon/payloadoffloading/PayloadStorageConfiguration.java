@@ -7,8 +7,27 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
 
 /**
- * Amazon payload storage configuration options such as Amazon S3 client,
- * bucket name, and payload size threshold for payloads.
+ * <p>Amazon payload storage configuration options such as Amazon S3 client,
+ * bucket name, and payload size threshold for payloads.</p>
+ *
+ * <p>Server side encryption is optional and can be enabled using with {@link #withServerSideEncryption(ServerSideEncryptionStrategy)}
+ * or {@link #setServerSideEncryptionStrategy(ServerSideEncryptionStrategy)}</p>
+ *
+ * <p>There are two possible options for server side encrption. This can be using a customer managed key or AWS managed CMK.</p>
+ *
+ * Example usage:
+ *
+ * <pre>
+ *     withServerSideEncryption(ServerSideEncrptionFactory.awsManagedCmk())
+ * </pre>
+ *
+ * or
+ *
+ * <pre>
+*     withServerSideEncryption(ServerSideEncrptionFactory.customerKey(YOUR_CUSTOMER_ID))
+ * </pre>
+ *
+ * @see software.amazon.payloadoffloading.ServerSideEncryptionFactory
  */
 @NotThreadSafe
 public class PayloadStorageConfiguration {
@@ -183,15 +202,35 @@ public class PayloadStorageConfiguration {
         this.alwaysThroughS3 = alwaysThroughS3;
     }
 
-    public PayloadStorageConfiguration withServiceSideEncryption(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
+    /**
+     * Sets which method of server side encryption should be used, if required.
+     *
+     * This is optional, it is set only when you want to configure S3 server side encryption with KMS.
+     *
+     * @param serverSideEncryptionStrategy The method of encryption required for S3 server side encryption with KMS.
+     * @return
+     */
+    public PayloadStorageConfiguration withServerSideEncryption(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
         setServerSideEncryptionStrategy(serverSideEncryptionStrategy);
         return this;
     }
 
+    /**
+     * Sets which method of server side encryption should be use, if required.
+     *
+     * This is optional, it is set only when you want to configure S3 Server Side Encryption with KMS.
+     *
+     * @param serverSideEncryptionStrategy The method of encryption required for S3 server side encryption with KMS.
+     */
     public void setServerSideEncryptionStrategy(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
         this.serverSideEncryptionStrategy = serverSideEncryptionStrategy;
     }
 
+    /**
+     * The method of service side encryption which should be used, if required.
+     *
+     * @return The server side encryption method required. Default null.
+     */
     public ServerSideEncryptionStrategy getServerSideEncryptionStrategy() {
         return this.serverSideEncryptionStrategy;
     }

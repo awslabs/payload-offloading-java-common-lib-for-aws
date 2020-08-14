@@ -208,7 +208,7 @@ public class PayloadStorageConfiguration {
      * This is optional, it is set only when you want to configure S3 server side encryption with KMS.
      *
      * @param serverSideEncryptionStrategy The method of encryption required for S3 server side encryption with KMS.
-     * @return
+     * @return the updated PayloadStorageConfiguration object.
      */
     public PayloadStorageConfiguration withServerSideEncryption(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
         setServerSideEncryptionStrategy(serverSideEncryptionStrategy);

@@ -1,21 +1,39 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.annotation.NotThreadSafe;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.annotations.NotThreadSafe;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.S3Client;
 
 /**
- * Amazon payload storage configuration options such as Amazon S3 client,
- * bucket name, and payload size threshold for payloads.
+ * <p>Amazon payload storage configuration options such as Amazon S3 client,
+ * bucket name, and payload size threshold for payloads.</p>
+ *
+ * <p>Server side encryption is optional and can be enabled using with {@link #withServerSideEncryption(ServerSideEncryptionStrategy)}
+ * or {@link #setServerSideEncryptionStrategy(ServerSideEncryptionStrategy)}</p>
+ *
+ * <p>There are two possible options for server side encrption. This can be using a customer managed key or AWS managed CMK.</p>
+ *
+ * Example usage:
+ *
+ * <pre>
+ *     withServerSideEncryption(ServerSideEncrptionFactory.awsManagedCmk())
+ * </pre>
+ *
+ * or
+ *
+ * <pre>
+*     withServerSideEncryption(ServerSideEncrptionFactory.customerKey(YOUR_CUSTOMER_ID))
+ * </pre>
+ *
+ * @see software.amazon.payloadoffloading.ServerSideEncryptionFactory
  */
 @NotThreadSafe
 public class PayloadStorageConfiguration {
-    private static final Log LOG = LogFactory.getLog(PayloadStorageConfiguration.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PayloadStorageConfiguration.class);
 
-    private AmazonS3 s3;
+    private S3Client s3;
     private String s3BucketName;
     private int payloadSizeThreshold = 0;
     private boolean alwaysThroughS3 = false;
@@ -23,21 +41,21 @@ public class PayloadStorageConfiguration {
     /**
      * This field is optional, it is set only when we want to configure S3 Server Side Encryption with KMS.
      */
-    private SSEAwsKeyManagementParams sseAwsKeyManagementParams;
+    private ServerSideEncryptionStrategy serverSideEncryptionStrategy;
 
     public PayloadStorageConfiguration() {
         s3 = null;
         s3BucketName = null;
-        sseAwsKeyManagementParams = null;
+        serverSideEncryptionStrategy = null;
     }
 
     public PayloadStorageConfiguration(PayloadStorageConfiguration other) {
-        this.s3 = other.getAmazonS3Client();
+        this.s3 = other.getS3Client();
         this.s3BucketName = other.getS3BucketName();
-        this.sseAwsKeyManagementParams = other.getSSEAwsKeyManagementParams();
         this.payloadSupport = other.isPayloadSupportEnabled();
         this.alwaysThroughS3 = other.isAlwaysThroughS3();
         this.payloadSizeThreshold = other.getPayloadSizeThreshold();
+        this.serverSideEncryptionStrategy = other.getServerSideEncryptionStrategy();
     }
 
     /**
@@ -47,11 +65,11 @@ public class PayloadStorageConfiguration {
      * @param s3BucketName Name of the bucket which is going to be used for storing payload.
      *                     The bucket must be already created and configured in s3.
      */
-    public void setPayloadSupportEnabled(AmazonS3 s3, String s3BucketName) {
+    public void setPayloadSupportEnabled(S3Client s3, String s3BucketName) {
         if (s3 == null || s3BucketName == null) {
             String errorMessage = "S3 client and/or S3 bucket name cannot be null.";
             LOG.error(errorMessage);
-            throw new AmazonClientException(errorMessage);
+            throw SdkClientException.create(errorMessage);
         }
         if (isPayloadSupportEnabled()) {
             LOG.warn("Payload support is already enabled. Overwriting AmazonS3Client and S3BucketName.");
@@ -70,7 +88,7 @@ public class PayloadStorageConfiguration {
      *                     The bucket must be already created and configured in s3.
      * @return the updated PayloadStorageConfiguration object.
      */
-    public PayloadStorageConfiguration withPayloadSupportEnabled(AmazonS3 s3, String s3BucketName) {
+    public PayloadStorageConfiguration withPayloadSupportEnabled(S3Client s3, String s3BucketName) {
         setPayloadSupportEnabled(s3, s3BucketName);
         return this;
     }
@@ -109,7 +127,7 @@ public class PayloadStorageConfiguration {
      *
      * @return Reference to the Amazon S3 client which is being used.
      */
-    public AmazonS3 getAmazonS3Client() {
+    public S3Client getS3Client() {
         return s3;
     }
 
@@ -120,35 +138,6 @@ public class PayloadStorageConfiguration {
      */
     public String getS3BucketName() {
         return s3BucketName;
-    }
-
-    /**
-     * Gets the S3 SSE-KMS encryption params of S3 objects under configured S3 bucket name.
-     *
-     * @return The S3 SSE-KMS params used for encryption.
-     */
-    public SSEAwsKeyManagementParams getSSEAwsKeyManagementParams() {
-        return sseAwsKeyManagementParams;
-    }
-
-    /**
-     * Sets the the S3 SSE-KMS encryption params of S3 objects under configured S3 bucket name.
-     *
-     * @param sseAwsKeyManagementParams The S3 SSE-KMS params used for encryption.
-     */
-    public void setSSEAwsKeyManagementParams(SSEAwsKeyManagementParams sseAwsKeyManagementParams) {
-        this.sseAwsKeyManagementParams = sseAwsKeyManagementParams;
-    }
-
-    /**
-     * Sets the the S3 SSE-KMS encryption params of S3 objects under configured S3 bucket name.
-     *
-     * @param sseAwsKeyManagementParams The S3 SSE-KMS params used for encryption.
-     * @return the updated PayloadStorageConfiguration object
-     */
-    public PayloadStorageConfiguration withSSEAwsKeyManagementParams(SSEAwsKeyManagementParams sseAwsKeyManagementParams) {
-        setSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
-        return this;
     }
 
     /**
@@ -212,4 +201,38 @@ public class PayloadStorageConfiguration {
     public void setAlwaysThroughS3(boolean alwaysThroughS3) {
         this.alwaysThroughS3 = alwaysThroughS3;
     }
+
+    /**
+     * Sets which method of server side encryption should be used, if required.
+     *
+     * This is optional, it is set only when you want to configure S3 server side encryption with KMS.
+     *
+     * @param serverSideEncryptionStrategy The method of encryption required for S3 server side encryption with KMS.
+     * @return the updated PayloadStorageConfiguration object.
+     */
+    public PayloadStorageConfiguration withServerSideEncryption(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
+        setServerSideEncryptionStrategy(serverSideEncryptionStrategy);
+        return this;
+    }
+
+    /**
+     * Sets which method of server side encryption should be use, if required.
+     *
+     * This is optional, it is set only when you want to configure S3 Server Side Encryption with KMS.
+     *
+     * @param serverSideEncryptionStrategy The method of encryption required for S3 server side encryption with KMS.
+     */
+    public void setServerSideEncryptionStrategy(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
+        this.serverSideEncryptionStrategy = serverSideEncryptionStrategy;
+    }
+
+    /**
+     * The method of service side encryption which should be used, if required.
+     *
+     * @return The server side encryption method required. Default null.
+     */
+    public ServerSideEncryptionStrategy getServerSideEncryptionStrategy() {
+        return this.serverSideEncryptionStrategy;
+    }
+
 }

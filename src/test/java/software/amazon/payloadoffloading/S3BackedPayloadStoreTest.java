@@ -1,7 +1,5 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.hamcrest.Matchers;
@@ -11,14 +9,21 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkException;
+
+import java.util.Objects;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(JUnitParamsRunner.class)
 public class S3BackedPayloadStoreTest {
     private static final String S3_BUCKET_NAME = "test-bucket-name";
     private static final String S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID = "test-customer-managed-kms-key-id";
+    private static final ServerSideEncryptionStrategy KMS_WITH_CUSTOMER_KEY = ServerSideEncryptionFactory.customerKey(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID);
+    private static final ServerSideEncryptionStrategy KMS_WITH_AWS_MANAGED_CMK = ServerSideEncryptionFactory.awsManagedCmk();
     private static final String ANY_PAYLOAD = "AnyPayload";
     private static final String ANY_S3_KEY = "AnyS3key";
     private static final String INCORRECT_POINTER_EXCEPTION_MSG = "Failed to read the S3 object pointer from given string";
@@ -53,15 +58,14 @@ public class S3BackedPayloadStoreTest {
                 },
                 // S3 SSE-KMS encryption with AWS managed KMS keys
                 {
-                    new S3BackedPayloadStore(defaultEncryptionS3Dao, S3_BUCKET_NAME, new SSEAwsKeyManagementParams()),
-                    new SSEAwsKeyManagementParams(),
+                    new S3BackedPayloadStore(defaultEncryptionS3Dao, S3_BUCKET_NAME, KMS_WITH_AWS_MANAGED_CMK),
+                    KMS_WITH_AWS_MANAGED_CMK,
                     defaultEncryptionS3Dao
                 },
                 // S3 SSE-KMS encryption with customer managed KMS key
                 {
-                    new S3BackedPayloadStore(customerKMSKeyEncryptionS3Dao, S3_BUCKET_NAME,
-                        new SSEAwsKeyManagementParams(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID)),
-                    new SSEAwsKeyManagementParams(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID),
+                    new S3BackedPayloadStore(customerKMSKeyEncryptionS3Dao, S3_BUCKET_NAME, KMS_WITH_CUSTOMER_KEY),
+                    KMS_WITH_CUSTOMER_KEY,
                     customerKMSKeyEncryptionS3Dao
                 }
         };
@@ -69,15 +73,14 @@ public class S3BackedPayloadStoreTest {
 
     @Test
     @Parameters(method = "testData")
-    public void testStoreOriginalPayloadOnSuccess(PayloadStore payloadStore,
-                                                  SSEAwsKeyManagementParams expectedParams, S3Dao mockS3Dao) {
-        String actualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD, ANY_PAYLOAD_LENGTH);
+    public void testStoreOriginalPayloadOnSuccess(PayloadStore payloadStore, ServerSideEncryptionStrategy expectedParams, S3Dao mockS3Dao) {
+        String actualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD);
 
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<SSEAwsKeyManagementParams> sseArgsCaptor = ArgumentCaptor.forClass(SSEAwsKeyManagementParams.class);
+        ArgumentCaptor<ServerSideEncryptionStrategy> sseArgsCaptor = ArgumentCaptor.forClass(ServerSideEncryptionStrategy.class);
 
         verify(mockS3Dao, times(1)).storeTextInS3(eq(S3_BUCKET_NAME), keyCaptor.capture(),
-                sseArgsCaptor.capture(), eq(ANY_PAYLOAD), eq(ANY_PAYLOAD_LENGTH));
+                sseArgsCaptor.capture(), eq(ANY_PAYLOAD));
 
         PayloadS3Pointer expectedPayloadPointer = new PayloadS3Pointer(S3_BUCKET_NAME, keyCaptor.getValue());
         assertEquals(expectedPayloadPointer.toJson(), actualPayloadPointer);
@@ -85,30 +88,26 @@ public class S3BackedPayloadStoreTest {
         if (expectedParams == null) {
             assertTrue(sseArgsCaptor.getValue() == null);
         } else {
-            assertEquals(expectedParams.getAwsKmsKeyId(), sseArgsCaptor.getValue().getAwsKmsKeyId());
+            assertEquals(expectedParams, sseArgsCaptor.getValue());
         }
     }
 
     @Test
     @Parameters(method = "testData")
     public void testStoreOriginalPayloadDoesAlwaysCreateNewObjects(PayloadStore payloadStore,
-                                                                   SSEAwsKeyManagementParams expectedParams,
+                                                                   ServerSideEncryptionStrategy expectedParams,
                                                                    S3Dao mockS3Dao) {
         //Store any payload
-        String anyActualPayloadPointer = payloadStore
-                .storeOriginalPayload(ANY_PAYLOAD, ANY_PAYLOAD_LENGTH);
+        String anyActualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD);
 
         //Store any other payload and validate that the pointers are different
-        String anyOtherActualPayloadPointer = payloadStore
-                .storeOriginalPayload(ANY_PAYLOAD, ANY_PAYLOAD_LENGTH);
+        String anyOtherActualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD);
 
         ArgumentCaptor<String> anyOtherKeyCaptor = ArgumentCaptor.forClass(String.class);
-
-        ArgumentCaptor<SSEAwsKeyManagementParams> sseArgsCaptor = ArgumentCaptor
-                .forClass(SSEAwsKeyManagementParams.class);
+        ArgumentCaptor<ServerSideEncryptionStrategy> sseArgsCaptor = ArgumentCaptor.forClass(ServerSideEncryptionStrategy.class);
 
         verify(mockS3Dao, times(2)).storeTextInS3(eq(S3_BUCKET_NAME), anyOtherKeyCaptor.capture(),
-                sseArgsCaptor.capture(), eq(ANY_PAYLOAD), eq(ANY_PAYLOAD_LENGTH));
+                sseArgsCaptor.capture(), eq(ANY_PAYLOAD));
 
         String anyS3Key = anyOtherKeyCaptor.getAllValues().get(0);
         String anyOtherS3Key = anyOtherKeyCaptor.getAllValues().get(1);
@@ -123,31 +122,29 @@ public class S3BackedPayloadStoreTest {
         assertThat(anyActualPayloadPointer, Matchers.not(anyOtherActualPayloadPointer));
 
         if (expectedParams == null) {
-            assertTrue(sseArgsCaptor.getAllValues().stream().allMatch(actualParams -> actualParams == null));
+            assertTrue(sseArgsCaptor.getAllValues().stream().allMatch(Objects::isNull));
         } else {
             assertTrue(sseArgsCaptor.getAllValues().stream().allMatch(actualParams ->
-                    (actualParams.getAwsKmsKeyId() == null && expectedParams.getAwsKmsKeyId() == null)
-                            || (actualParams.getAwsKmsKeyId().equals(expectedParams.getAwsKmsKeyId()))));
+                    actualParams.equals(expectedParams)));
         }
     }
 
     @Test
     @Parameters(method = "testData")
-    public void testStoreOriginalPayloadOnS3Failure(PayloadStore payloadStore,
-                                                    SSEAwsKeyManagementParams expectedParams, S3Dao mockS3Dao) {
-        doThrow(new AmazonClientException("S3 Exception"))
+    public void testStoreOriginalPayloadOnS3Failure(PayloadStore payloadStore, ServerSideEncryptionStrategy awsKmsKeyId, S3Dao mockS3Dao) {
+        doThrow(SdkException.create("S3 Exception", new Throwable()))
                 .when(mockS3Dao)
                 .storeTextInS3(
                         any(String.class),
                         any(String.class),
-                        expectedParams == null ? isNull() : any(SSEAwsKeyManagementParams.class),
-                        any(String.class),
-                        any(Long.class));
+                        // Can be String or null
+                        any(),
+                        any(String.class));
 
-        exception.expect(AmazonClientException.class);
+        exception.expect(SdkException.class);
         exception.expectMessage("S3 Exception");
         //Any S3 Dao exception is thrown back as-is to clients
-        payloadStore.storeOriginalPayload(ANY_PAYLOAD, ANY_PAYLOAD_LENGTH);
+        payloadStore.storeOriginalPayload(ANY_PAYLOAD);
     }
 
     @Test
@@ -167,7 +164,7 @@ public class S3BackedPayloadStoreTest {
 
     @Test
     public void testGetOriginalPayloadIncorrectPointer() {
-        exception.expect(AmazonClientException.class);
+        exception.expect(SdkClientException.class);
         exception.expectMessage(INCORRECT_POINTER_EXCEPTION_MSG);
         //Any S3 Dao exception is thrown back as-is to clients
         payloadStore.getOriginalPayload("IncorrectPointer");
@@ -176,8 +173,8 @@ public class S3BackedPayloadStoreTest {
 
     @Test
     public void testGetOriginalPayloadOnS3Failure() {
-        when(s3Dao.getTextFromS3(any(String.class), any(String.class))).thenThrow(new AmazonClientException("S3 Exception"));
-        exception.expect(AmazonClientException.class);
+        when(s3Dao.getTextFromS3(any(String.class), any(String.class))).thenThrow(SdkException.create("S3 Exception", new Throwable()));
+        exception.expect(SdkException.class);
         exception.expectMessage("S3 Exception");
         //Any S3 Dao exception is thrown back as-is to clients
         PayloadS3Pointer anyPointer = new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY);
@@ -199,7 +196,7 @@ public class S3BackedPayloadStoreTest {
 
     @Test
     public void testDeleteOriginalPayloadIncorrectPointer() {
-        exception.expect(AmazonClientException.class);
+        exception.expect(SdkClientException.class);
         exception.expectMessage(INCORRECT_POINTER_EXCEPTION_MSG);
         payloadStore.deleteOriginalPayload("IncorrectPointer");
         verifyNoInteractions(s3Dao);

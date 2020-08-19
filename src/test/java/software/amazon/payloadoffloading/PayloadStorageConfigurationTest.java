@@ -1,9 +1,7 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
-import org.junit.Before;
 import org.junit.Test;
+import software.amazon.awssdk.services.s3.S3Client;
 
 import static org.mockito.Mockito.mock;
 import static org.junit.Assert.*;
@@ -13,18 +11,13 @@ import static org.junit.Assert.*;
  */
 public class PayloadStorageConfigurationTest {
 
-    private static String s3BucketName = "test-bucket-name";
-    private static String s3ServerSideEncryptionKMSKeyId = "test-customer-managed-kms-key-id";
-    private SSEAwsKeyManagementParams sseAwsKeyManagementParams;
-
-    @Before
-    public void setup() {
-        sseAwsKeyManagementParams = new SSEAwsKeyManagementParams(s3ServerSideEncryptionKMSKeyId);
-    }
+    private static final String s3BucketName = "test-bucket-name";
+    private static final String s3ServerSideEncryptionKMSKeyId = "test-customer-managed-kms-key-id";
+    private static final ServerSideEncryptionStrategy SERVER_SIDE_ENCRYPTION_STRATEGY = ServerSideEncryptionFactory.awsManagedCmk();
 
     @Test
     public void testCopyConstructor() {
-        AmazonS3 s3 = mock(AmazonS3.class);
+        S3Client s3 = mock(S3Client.class);
 
         boolean alwaysThroughS3 = true;
         int payloadSizeThreshold = 500;
@@ -32,15 +25,15 @@ public class PayloadStorageConfigurationTest {
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
 
         payloadStorageConfiguration.withPayloadSupportEnabled(s3, s3BucketName)
-                .withAlwaysThroughS3(alwaysThroughS3).withPayloadSizeThreshold(payloadSizeThreshold)
-                .withSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
+                .withAlwaysThroughS3(alwaysThroughS3)
+                .withPayloadSizeThreshold(payloadSizeThreshold)
+                .withServerSideEncryption(SERVER_SIDE_ENCRYPTION_STRATEGY);
 
         PayloadStorageConfiguration newPayloadStorageConfiguration = new PayloadStorageConfiguration(payloadStorageConfiguration);
 
-        assertEquals(s3, newPayloadStorageConfiguration.getAmazonS3Client());
+        assertEquals(s3, newPayloadStorageConfiguration.getS3Client());
         assertEquals(s3BucketName, newPayloadStorageConfiguration.getS3BucketName());
-        assertEquals(sseAwsKeyManagementParams, newPayloadStorageConfiguration.getSSEAwsKeyManagementParams());
-        assertEquals(s3ServerSideEncryptionKMSKeyId, newPayloadStorageConfiguration.getSSEAwsKeyManagementParams().getAwsKmsKeyId());
+        assertEquals(SERVER_SIDE_ENCRYPTION_STRATEGY, newPayloadStorageConfiguration.getServerSideEncryptionStrategy());
         assertTrue(newPayloadStorageConfiguration.isPayloadSupportEnabled());
         assertEquals(alwaysThroughS3, newPayloadStorageConfiguration.isAlwaysThroughS3());
         assertEquals(payloadSizeThreshold, newPayloadStorageConfiguration.getPayloadSizeThreshold());
@@ -49,12 +42,12 @@ public class PayloadStorageConfigurationTest {
 
     @Test
     public void testPayloadSupportEnabled() {
-        AmazonS3 s3 = mock(AmazonS3.class);        
+        S3Client s3 = mock(S3Client.class);
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
         payloadStorageConfiguration.setPayloadSupportEnabled(s3, s3BucketName);
 
         assertTrue(payloadStorageConfiguration.isPayloadSupportEnabled());
-        assertNotNull(payloadStorageConfiguration.getAmazonS3Client());
+        assertNotNull(payloadStorageConfiguration.getS3Client());
         assertEquals(s3BucketName, payloadStorageConfiguration.getS3BucketName());
     }
 
@@ -63,7 +56,7 @@ public class PayloadStorageConfigurationTest {
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
         payloadStorageConfiguration.setPayloadSupportDisabled();
 
-        assertNull(payloadStorageConfiguration.getAmazonS3Client());
+        assertNull(payloadStorageConfiguration.getS3Client());
         assertNull(payloadStorageConfiguration.getS3BucketName());
     }
 
@@ -82,10 +75,9 @@ public class PayloadStorageConfigurationTest {
     public void testSseAwsKeyManagementParams() {
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
 
-        assertNull(payloadStorageConfiguration.getSSEAwsKeyManagementParams());
+        assertNull(payloadStorageConfiguration.getServerSideEncryptionStrategy());
 
-        payloadStorageConfiguration.setSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
-        assertEquals(s3ServerSideEncryptionKMSKeyId, payloadStorageConfiguration.getSSEAwsKeyManagementParams()
-            .getAwsKmsKeyId());
+        payloadStorageConfiguration.setServerSideEncryptionStrategy(SERVER_SIDE_ENCRYPTION_STRATEGY);
+        assertEquals(SERVER_SIDE_ENCRYPTION_STRATEGY, payloadStorageConfiguration.getServerSideEncryptionStrategy());
     }
 }

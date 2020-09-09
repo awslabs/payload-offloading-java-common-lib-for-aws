@@ -1,6 +1,7 @@
 package software.amazon.payloadoffloading;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,5 +88,18 @@ public class PayloadStorageConfigurationTest {
         payloadStorageConfiguration.setSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
         assertEquals(s3ServerSideEncryptionKMSKeyId, payloadStorageConfiguration.getSSEAwsKeyManagementParams()
             .getAwsKmsKeyId());
+    }
+
+    @Test
+    public void testCannedAccessControlList() {
+
+        PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
+
+        assertFalse(payloadStorageConfiguration.isCannedAccessControlListDefined());
+
+        final CannedAccessControlList accessControlList = CannedAccessControlList.BucketOwnerFullControl;
+        payloadStorageConfiguration.withCannedAccessControlList(accessControlList);
+        assertTrue(payloadStorageConfiguration.isCannedAccessControlListDefined());
+        assertEquals(accessControlList, payloadStorageConfiguration.getCannedAccessControlList());
     }
 }

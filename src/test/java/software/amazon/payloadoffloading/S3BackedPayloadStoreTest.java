@@ -1,6 +1,7 @@
 package software.amazon.payloadoffloading;
 
 import com.amazonaws.AmazonClientException;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
@@ -75,9 +76,10 @@ public class S3BackedPayloadStoreTest {
 
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<SSEAwsKeyManagementParams> sseArgsCaptor = ArgumentCaptor.forClass(SSEAwsKeyManagementParams.class);
+        ArgumentCaptor<CannedAccessControlList> cannedArgsCaptor = ArgumentCaptor.forClass(CannedAccessControlList.class);
 
         verify(mockS3Dao, times(1)).storeTextInS3(eq(S3_BUCKET_NAME), keyCaptor.capture(),
-                sseArgsCaptor.capture(), eq(ANY_PAYLOAD), eq(ANY_PAYLOAD_LENGTH));
+                sseArgsCaptor.capture(), cannedArgsCaptor.capture(), eq(ANY_PAYLOAD), eq(ANY_PAYLOAD_LENGTH));
 
         PayloadS3Pointer expectedPayloadPointer = new PayloadS3Pointer(S3_BUCKET_NAME, keyCaptor.getValue());
         assertEquals(expectedPayloadPointer.toJson(), actualPayloadPointer);
@@ -107,8 +109,11 @@ public class S3BackedPayloadStoreTest {
         ArgumentCaptor<SSEAwsKeyManagementParams> sseArgsCaptor = ArgumentCaptor
                 .forClass(SSEAwsKeyManagementParams.class);
 
+        ArgumentCaptor<CannedAccessControlList> cannedArgsCaptor = ArgumentCaptor
+                .forClass(CannedAccessControlList.class);
+
         verify(mockS3Dao, times(2)).storeTextInS3(eq(S3_BUCKET_NAME), anyOtherKeyCaptor.capture(),
-                sseArgsCaptor.capture(), eq(ANY_PAYLOAD), eq(ANY_PAYLOAD_LENGTH));
+                sseArgsCaptor.capture(), cannedArgsCaptor.capture(), eq(ANY_PAYLOAD), eq(ANY_PAYLOAD_LENGTH));
 
         String anyS3Key = anyOtherKeyCaptor.getAllValues().get(0);
         String anyOtherS3Key = anyOtherKeyCaptor.getAllValues().get(1);
@@ -141,6 +146,7 @@ public class S3BackedPayloadStoreTest {
                         any(String.class),
                         any(String.class),
                         expectedParams == null ? isNull() : any(SSEAwsKeyManagementParams.class),
+                        any(),
                         any(String.class),
                         any(Long.class));
 

@@ -10,6 +10,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.utils.IoUtils;
 
@@ -56,10 +57,15 @@ public class S3Dao {
         return embeddedText;
     }
 
-    public void storeTextInS3(String s3BucketName, String s3Key, ServerSideEncryptionStrategy serverSideEncryptionStrategy, String payloadContentStr) {
+    public void storeTextInS3(String s3BucketName, String s3Key, ServerSideEncryptionStrategy serverSideEncryptionStrategy,
+                              ObjectCannedACL objectCannedACL, String payloadContentStr) {
         PutObjectRequest.Builder putObjectRequestBuilder = PutObjectRequest.builder()
                 .bucket(s3BucketName)
                 .key(s3Key);
+
+        if (objectCannedACL != null) {
+            putObjectRequestBuilder.acl(objectCannedACL);
+        }
 
         // https://docs.aws.amazon.com/AmazonS3/latest/dev/kms-using-sdks.html
         if (serverSideEncryptionStrategy != null) {

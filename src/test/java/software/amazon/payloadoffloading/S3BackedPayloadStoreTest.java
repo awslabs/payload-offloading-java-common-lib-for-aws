@@ -11,6 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 import java.util.Objects;
 
@@ -78,9 +79,10 @@ public class S3BackedPayloadStoreTest {
 
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<ServerSideEncryptionStrategy> sseArgsCaptor = ArgumentCaptor.forClass(ServerSideEncryptionStrategy.class);
+        ArgumentCaptor<ObjectCannedACL> cannedArgsCaptor = ArgumentCaptor.forClass(ObjectCannedACL.class);
 
         verify(mockS3Dao, times(1)).storeTextInS3(eq(S3_BUCKET_NAME), keyCaptor.capture(),
-                sseArgsCaptor.capture(), eq(ANY_PAYLOAD));
+                sseArgsCaptor.capture(), cannedArgsCaptor.capture(), eq(ANY_PAYLOAD));
 
         PayloadS3Pointer expectedPayloadPointer = new PayloadS3Pointer(S3_BUCKET_NAME, keyCaptor.getValue());
         assertEquals(expectedPayloadPointer.toJson(), actualPayloadPointer);
@@ -105,9 +107,10 @@ public class S3BackedPayloadStoreTest {
 
         ArgumentCaptor<String> anyOtherKeyCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<ServerSideEncryptionStrategy> sseArgsCaptor = ArgumentCaptor.forClass(ServerSideEncryptionStrategy.class);
+        ArgumentCaptor<ObjectCannedACL> cannedArgsCaptor = ArgumentCaptor.forClass(ObjectCannedACL.class);
 
         verify(mockS3Dao, times(2)).storeTextInS3(eq(S3_BUCKET_NAME), anyOtherKeyCaptor.capture(),
-                sseArgsCaptor.capture(), eq(ANY_PAYLOAD));
+                sseArgsCaptor.capture(), cannedArgsCaptor.capture(), eq(ANY_PAYLOAD));
 
         String anyS3Key = anyOtherKeyCaptor.getAllValues().get(0);
         String anyOtherS3Key = anyOtherKeyCaptor.getAllValues().get(1);
@@ -138,6 +141,7 @@ public class S3BackedPayloadStoreTest {
                         any(String.class),
                         any(String.class),
                         // Can be String or null
+                        any(),
                         any(),
                         any(String.class));
 

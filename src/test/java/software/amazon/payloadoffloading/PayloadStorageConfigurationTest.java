@@ -1,7 +1,9 @@
 package software.amazon.payloadoffloading;
 
+import org.junit.Before;
 import org.junit.Test;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 import static org.mockito.Mockito.mock;
 import static org.junit.Assert.*;
@@ -14,6 +16,7 @@ public class PayloadStorageConfigurationTest {
     private static final String s3BucketName = "test-bucket-name";
     private static final String s3ServerSideEncryptionKMSKeyId = "test-customer-managed-kms-key-id";
     private static final ServerSideEncryptionStrategy SERVER_SIDE_ENCRYPTION_STRATEGY = ServerSideEncryptionFactory.awsManagedCmk();
+    private final ObjectCannedACL objectCannelACL = ObjectCannedACL.BUCKET_OWNER_FULL_CONTROL;
 
     @Test
     public void testCopyConstructor() {
@@ -27,7 +30,8 @@ public class PayloadStorageConfigurationTest {
         payloadStorageConfiguration.withPayloadSupportEnabled(s3, s3BucketName)
                 .withAlwaysThroughS3(alwaysThroughS3)
                 .withPayloadSizeThreshold(payloadSizeThreshold)
-                .withServerSideEncryption(SERVER_SIDE_ENCRYPTION_STRATEGY);
+                .withServerSideEncryption(SERVER_SIDE_ENCRYPTION_STRATEGY)
+                .withObjectCannedACL(objectCannelACL);
 
         PayloadStorageConfiguration newPayloadStorageConfiguration = new PayloadStorageConfiguration(payloadStorageConfiguration);
 
@@ -35,6 +39,7 @@ public class PayloadStorageConfigurationTest {
         assertEquals(s3BucketName, newPayloadStorageConfiguration.getS3BucketName());
         assertEquals(SERVER_SIDE_ENCRYPTION_STRATEGY, newPayloadStorageConfiguration.getServerSideEncryptionStrategy());
         assertTrue(newPayloadStorageConfiguration.isPayloadSupportEnabled());
+        assertEquals(objectCannelACL, newPayloadStorageConfiguration.getObjectCannedACL());
         assertEquals(alwaysThroughS3, newPayloadStorageConfiguration.isAlwaysThroughS3());
         assertEquals(payloadSizeThreshold, newPayloadStorageConfiguration.getPayloadSizeThreshold());
         assertNotSame(newPayloadStorageConfiguration, payloadStorageConfiguration);
@@ -79,5 +84,16 @@ public class PayloadStorageConfigurationTest {
 
         payloadStorageConfiguration.setServerSideEncryptionStrategy(SERVER_SIDE_ENCRYPTION_STRATEGY);
         assertEquals(SERVER_SIDE_ENCRYPTION_STRATEGY, payloadStorageConfiguration.getServerSideEncryptionStrategy());
+    }
+
+    @Test
+    public void testCannedAccessControlList() {
+        PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
+
+        assertFalse(payloadStorageConfiguration.isObjectCannedACLDefined());
+
+        payloadStorageConfiguration.withObjectCannedACL(objectCannelACL);
+        assertTrue(payloadStorageConfiguration.isObjectCannedACLDefined());
+        assertEquals(objectCannelACL, payloadStorageConfiguration.getObjectCannedACL());
     }
 }

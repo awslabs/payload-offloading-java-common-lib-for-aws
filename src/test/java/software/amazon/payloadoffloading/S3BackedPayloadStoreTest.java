@@ -4,7 +4,6 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import junitparams.JUnitParamsRunner;
-import junitparams.Parameters;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
@@ -34,38 +33,6 @@ public class S3BackedPayloadStoreTest {
     public void setup() {
         s3Dao = mock(S3Dao.class);
         payloadStore = new S3BackedPayloadStore(s3Dao, S3_BUCKET_NAME);
-    }
-
-    private Object[] testData() {
-        // Here, we create separate mock of S3Dao because JUnitParamsRunner collects parameters
-        // for tests well before invocation of @Before or @BeforeClass methods.
-        // That means our default s3Dao mock isn't instantiated until then. For parameterized tests,
-        // we instantiate our local S3Dao mock per combination, pass it to S3BackedPayloadStore and also pass it
-        // as test parameter to allow verifying calls to the mockS3Dao.
-        S3Dao noEncryptionS3Dao = mock(S3Dao.class);
-        S3Dao defaultEncryptionS3Dao = mock(S3Dao.class);
-        S3Dao customerKMSKeyEncryptionS3Dao = mock(S3Dao.class);
-        return new Object[][]{
-                // No S3 SSE-KMS encryption
-                {
-                    new S3BackedPayloadStore(noEncryptionS3Dao, S3_BUCKET_NAME),
-                    null,
-                    noEncryptionS3Dao
-                },
-                // S3 SSE-KMS encryption with AWS managed KMS keys
-//                {
-//                    new S3BackedPayloadStore(defaultEncryptionS3Dao, S3_BUCKET_NAME, new SSEAwsKeyManagementParams()),
-//                    new SSEAwsKeyManagementParams(),
-//                    defaultEncryptionS3Dao
-//                },
-//                // S3 SSE-KMS encryption with customer managed KMS key
-//                {
-//                    new S3BackedPayloadStore(customerKMSKeyEncryptionS3Dao, S3_BUCKET_NAME,
-//                        new SSEAwsKeyManagementParams(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID)),
-//                    new SSEAwsKeyManagementParams(S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID),
-//                    customerKMSKeyEncryptionS3Dao
-//                }
-        };
     }
 
     @Test
@@ -112,11 +79,9 @@ public class S3BackedPayloadStoreTest {
     }
 
     @Test
-    @Parameters(method = "testData")
-    public void testStoreOriginalPayloadOnS3Failure(PayloadStore payloadStore,
-                                                    SSEAwsKeyManagementParams expectedParams, S3Dao mockS3Dao) {
+    public void testStoreOriginalPayloadOnS3Failure() {
         doThrow(new AmazonClientException("S3 Exception"))
-                .when(mockS3Dao)
+                .when(s3Dao)
                 .storeTextInS3(
                         any(String.class),
                         any(String.class),

@@ -1,7 +1,5 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.services.s3.model.CannedAccessControlList;
-import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

@@ -19,9 +19,17 @@ import java.nio.charset.StandardCharsets;
 public class S3Dao {
     private static final Log LOG = LogFactory.getLog(S3Dao.class);
     private final AmazonS3 s3Client;
+    private final SSEAwsKeyManagementParams sseAwsKeyManagementParams;
+    private final CannedAccessControlList cannedAccessControlList;
 
     public S3Dao(AmazonS3 s3Client) {
+        this(s3Client, null, null);
+    }
+
+    public S3Dao(AmazonS3 s3Client, SSEAwsKeyManagementParams sseAwsKeyManagementParams, CannedAccessControlList cannedAccessControlList) {
         this.s3Client = s3Client;
+        this.sseAwsKeyManagementParams = sseAwsKeyManagementParams;
+        this.cannedAccessControlList = cannedAccessControlList;
     }
 
     public String getTextFromS3(String s3BucketName, String s3Key) {
@@ -60,13 +68,16 @@ public class S3Dao {
         return embeddedText;
     }
 
-    public void storeTextInS3(String s3BucketName, String s3Key, SSEAwsKeyManagementParams sseAwsKeyManagementParams,
-                              String payloadContentStr, Long payloadContentSize) {
+    public void storeTextInS3(String s3BucketName, String s3Key, String payloadContentStr, Long payloadContentSize) {
         InputStream payloadContentStream = new ByteArrayInputStream(payloadContentStr.getBytes(StandardCharsets.UTF_8));
         ObjectMetadata payloadContentStreamMetadata = new ObjectMetadata();
         payloadContentStreamMetadata.setContentLength(payloadContentSize);
         PutObjectRequest putObjectRequest = new PutObjectRequest(s3BucketName, s3Key,
                 payloadContentStream, payloadContentStreamMetadata);
+
+        if (cannedAccessControlList != null) {
+            putObjectRequest.withCannedAcl(cannedAccessControlList);
+        }
 
         // https://docs.aws.amazon.com/AmazonS3/latest/dev/kms-using-sdks.html
         if (sseAwsKeyManagementParams != null) {
@@ -87,10 +98,6 @@ public class S3Dao {
             LOG.error(errorMessage, e);
             throw new AmazonClientException(errorMessage, e);
         }
-    }
-
-    public void storeTextInS3(String s3BucketName, String s3Key, String payloadContentStr, Long payloadContentSize) {
-        storeTextInS3(s3BucketName, s3Key, null, payloadContentStr, payloadContentSize);
     }
 
     public void deletePayloadFromS3(String s3BucketName, String s3Key) {

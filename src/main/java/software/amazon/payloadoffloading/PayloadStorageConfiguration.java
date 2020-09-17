@@ -3,6 +3,7 @@ package software.amazon.payloadoffloading;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.annotation.NotThreadSafe;
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,6 +22,10 @@ public class PayloadStorageConfiguration {
     private boolean alwaysThroughS3 = false;
     private boolean payloadSupport = false;
     /**
+     * This field is optional, it is set only when we want to add access control list to Amazon S3 buckets and objects
+     */
+    private CannedAccessControlList cannedAccessControlList;
+    /**
      * This field is optional, it is set only when we want to configure S3 Server Side Encryption with KMS.
      */
     private SSEAwsKeyManagementParams sseAwsKeyManagementParams;
@@ -29,6 +34,7 @@ public class PayloadStorageConfiguration {
         s3 = null;
         s3BucketName = null;
         sseAwsKeyManagementParams = null;
+        cannedAccessControlList = null;
     }
 
     public PayloadStorageConfiguration(PayloadStorageConfiguration other) {
@@ -38,6 +44,7 @@ public class PayloadStorageConfiguration {
         this.payloadSupport = other.isPayloadSupportEnabled();
         this.alwaysThroughS3 = other.isAlwaysThroughS3();
         this.payloadSizeThreshold = other.getPayloadSizeThreshold();
+        this.cannedAccessControlList = other.cannedAccessControlList;
     }
 
     /**
@@ -211,5 +218,40 @@ public class PayloadStorageConfiguration {
      */
     public void setAlwaysThroughS3(boolean alwaysThroughS3) {
         this.alwaysThroughS3 = alwaysThroughS3;
+    }
+
+    /**
+     * Configures the ACL to apply to the Amazon S3 putObject request.
+     * @param cannedAccessControlList
+     *            The ACL to be used when storing objects in Amazon S3
+     */
+    public void setCannedAccessControlList(CannedAccessControlList cannedAccessControlList) {
+        this.cannedAccessControlList = cannedAccessControlList;
+    }
+
+    /**
+     * Configures the ACL to apply to the Amazon S3 putObject request.
+     * @param cannedAccessControlList
+     *            The ACL to be used when storing objects in Amazon S3
+     */
+    public PayloadStorageConfiguration withCannedAccessControlList(CannedAccessControlList cannedAccessControlList) {
+        setCannedAccessControlList(cannedAccessControlList);
+        return this;
+    }
+
+    /**
+     * Checks whether an ACL have been configured for storing objects in Amazon S3.
+     * @return True if ACL is defined
+     */
+    public boolean isCannedAccessControlListDefined() {
+        return null != cannedAccessControlList;
+    }
+
+    /**
+     * Gets the AWS ACL to apply to the Amazon S3 putObject request.
+     * @return Amazon S3 object ACL
+     */
+    public CannedAccessControlList getCannedAccessControlList() {
+        return cannedAccessControlList;
     }
 }

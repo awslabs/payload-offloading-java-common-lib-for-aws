@@ -1,6 +1,5 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -14,17 +13,10 @@ public class S3BackedPayloadStore implements PayloadStore {
 
     private final String s3BucketName;
     private final S3Dao s3Dao;
-    private final SSEAwsKeyManagementParams sseAwsKeyManagementParams;
 
     public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName) {
-        this(s3Dao, s3BucketName, null);
-    }
-
-    public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName,
-                                SSEAwsKeyManagementParams sseAwsKeyManagementParams) {
         this.s3BucketName = s3BucketName;
         this.s3Dao = s3Dao;
-        this.sseAwsKeyManagementParams = sseAwsKeyManagementParams;
     }
 
     @Override
@@ -32,7 +24,7 @@ public class S3BackedPayloadStore implements PayloadStore {
         String s3Key = UUID.randomUUID().toString();
 
         // Store the payload content in S3.
-        s3Dao.storeTextInS3(s3BucketName, s3Key, sseAwsKeyManagementParams, payload, payloadContentSize);
+        s3Dao.storeTextInS3(s3BucketName, s3Key, payload, payloadContentSize);
         LOG.info("S3 object created, Bucket name: " + s3BucketName + ", Object key: " + s3Key + ".");
 
         // Convert S3 pointer (bucket name, key, etc) to JSON string

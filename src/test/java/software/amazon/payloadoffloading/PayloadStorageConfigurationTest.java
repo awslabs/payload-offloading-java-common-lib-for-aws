@@ -1,6 +1,7 @@
 package software.amazon.payloadoffloading;
 
 import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,10 +17,12 @@ public class PayloadStorageConfigurationTest {
     private static String s3BucketName = "test-bucket-name";
     private static String s3ServerSideEncryptionKMSKeyId = "test-customer-managed-kms-key-id";
     private SSEAwsKeyManagementParams sseAwsKeyManagementParams;
+    private CannedAccessControlList cannedAccessControlList;
 
     @Before
     public void setup() {
         sseAwsKeyManagementParams = new SSEAwsKeyManagementParams(s3ServerSideEncryptionKMSKeyId);
+        cannedAccessControlList = CannedAccessControlList.BucketOwnerFullControl;
     }
 
     @Test
@@ -33,7 +36,8 @@ public class PayloadStorageConfigurationTest {
 
         payloadStorageConfiguration.withPayloadSupportEnabled(s3, s3BucketName)
                 .withAlwaysThroughS3(alwaysThroughS3).withPayloadSizeThreshold(payloadSizeThreshold)
-                .withSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
+                .withSSEAwsKeyManagementParams(sseAwsKeyManagementParams)
+                .withCannedAccessControlList(cannedAccessControlList);
 
         PayloadStorageConfiguration newPayloadStorageConfiguration = new PayloadStorageConfiguration(payloadStorageConfiguration);
 
@@ -41,6 +45,7 @@ public class PayloadStorageConfigurationTest {
         assertEquals(s3BucketName, newPayloadStorageConfiguration.getS3BucketName());
         assertEquals(sseAwsKeyManagementParams, newPayloadStorageConfiguration.getSSEAwsKeyManagementParams());
         assertEquals(s3ServerSideEncryptionKMSKeyId, newPayloadStorageConfiguration.getSSEAwsKeyManagementParams().getAwsKmsKeyId());
+        assertEquals(cannedAccessControlList, newPayloadStorageConfiguration.getCannedAccessControlList());
         assertTrue(newPayloadStorageConfiguration.isPayloadSupportEnabled());
         assertEquals(alwaysThroughS3, newPayloadStorageConfiguration.isAlwaysThroughS3());
         assertEquals(payloadSizeThreshold, newPayloadStorageConfiguration.getPayloadSizeThreshold());
@@ -87,5 +92,17 @@ public class PayloadStorageConfigurationTest {
         payloadStorageConfiguration.setSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
         assertEquals(s3ServerSideEncryptionKMSKeyId, payloadStorageConfiguration.getSSEAwsKeyManagementParams()
             .getAwsKmsKeyId());
+    }
+
+    @Test
+    public void testCannedAccessControlList() {
+
+        PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
+
+        assertFalse(payloadStorageConfiguration.isCannedAccessControlListDefined());
+
+        payloadStorageConfiguration.withCannedAccessControlList(cannedAccessControlList);
+        assertTrue(payloadStorageConfiguration.isCannedAccessControlListDefined());
+        assertEquals(cannedAccessControlList, payloadStorageConfiguration.getCannedAccessControlList());
     }
 }

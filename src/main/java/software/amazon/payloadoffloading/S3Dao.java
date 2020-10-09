@@ -22,9 +22,17 @@ import java.io.IOException;
 public class S3Dao {
     private static final Logger LOG = LoggerFactory.getLogger(S3Dao.class);
     private final S3Client s3Client;
+    private final ServerSideEncryptionStrategy serverSideEncryptionStrategy;
+    private final ObjectCannedACL objectCannedACL;
 
     public S3Dao(S3Client s3Client) {
+        this(s3Client, null, null);
+    }
+
+    public S3Dao(S3Client s3Client, ServerSideEncryptionStrategy serverSideEncryptionStrategy, ObjectCannedACL objectCannedACL) {
         this.s3Client = s3Client;
+        this.serverSideEncryptionStrategy = serverSideEncryptionStrategy;
+        this.objectCannedACL = objectCannedACL;
     }
 
     public String getTextFromS3(String s3BucketName, String s3Key) {
@@ -57,8 +65,7 @@ public class S3Dao {
         return embeddedText;
     }
 
-    public void storeTextInS3(String s3BucketName, String s3Key, ServerSideEncryptionStrategy serverSideEncryptionStrategy,
-                              ObjectCannedACL objectCannedACL, String payloadContentStr) {
+    public void storeTextInS3(String s3BucketName, String s3Key, String payloadContentStr) {
         PutObjectRequest.Builder putObjectRequestBuilder = PutObjectRequest.builder()
                 .bucket(s3BucketName)
                 .key(s3Key);

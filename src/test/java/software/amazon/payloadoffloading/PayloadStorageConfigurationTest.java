@@ -1,6 +1,5 @@
 package software.amazon.payloadoffloading;
 
-import org.junit.Before;
 import org.junit.Test;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
@@ -14,7 +13,6 @@ import static org.junit.Assert.*;
 public class PayloadStorageConfigurationTest {
 
     private static final String s3BucketName = "test-bucket-name";
-    private static final String s3ServerSideEncryptionKMSKeyId = "test-customer-managed-kms-key-id";
     private static final ServerSideEncryptionStrategy SERVER_SIDE_ENCRYPTION_STRATEGY = ServerSideEncryptionFactory.awsManagedCmk();
     private final ObjectCannedACL objectCannelACL = ObjectCannedACL.BUCKET_OWNER_FULL_CONTROL;
 

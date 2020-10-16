@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.annotations.NotThreadSafe;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 /**
  * <p>Amazon payload storage configuration options such as Amazon S3 client,
@@ -42,11 +43,16 @@ public class PayloadStorageConfiguration {
      * This field is optional, it is set only when we want to configure S3 Server Side Encryption with KMS.
      */
     private ServerSideEncryptionStrategy serverSideEncryptionStrategy;
+    /**
+     * This field is optional, it is set only when we want to add access control list to Amazon S3 buckets and objects
+     */
+    private ObjectCannedACL objectCannedACL;
 
     public PayloadStorageConfiguration() {
         s3 = null;
         s3BucketName = null;
         serverSideEncryptionStrategy = null;
+        objectCannedACL = null;
     }
 
     public PayloadStorageConfiguration(PayloadStorageConfiguration other) {
@@ -56,6 +62,7 @@ public class PayloadStorageConfiguration {
         this.alwaysThroughS3 = other.isAlwaysThroughS3();
         this.payloadSizeThreshold = other.getPayloadSizeThreshold();
         this.serverSideEncryptionStrategy = other.getServerSideEncryptionStrategy();
+        this.objectCannedACL = other.getObjectCannedACL();
     }
 
     /**
@@ -235,4 +242,38 @@ public class PayloadStorageConfiguration {
         return this.serverSideEncryptionStrategy;
     }
 
+    /**
+     * Configures the ACL to apply to the Amazon S3 putObject request.
+     * @param objectCannedACL
+     *            The ACL to be used when storing objects in Amazon S3
+     */
+    public void setObjectCannedACL(ObjectCannedACL objectCannedACL) {
+        this.objectCannedACL = objectCannedACL;
+    }
+
+    /**
+     * Configures the ACL to apply to the Amazon S3 putObject request.
+     * @param objectCannedACL
+     *            The ACL to be used when storing objects in Amazon S3
+     */
+    public PayloadStorageConfiguration withObjectCannedACL(ObjectCannedACL objectCannedACL) {
+        setObjectCannedACL(objectCannedACL);
+        return this;
+    }
+
+    /**
+     * Checks whether an ACL have been configured for storing objects in Amazon S3.
+     * @return True if ACL is defined
+     */
+    public boolean isObjectCannedACLDefined() {
+        return null != objectCannedACL;
+    }
+
+    /**
+     * Gets the AWS ACL to apply to the Amazon S3 putObject request.
+     * @return Amazon S3 object ACL
+     */
+    public ObjectCannedACL getObjectCannedACL() {
+        return objectCannedACL;
+    }
 }

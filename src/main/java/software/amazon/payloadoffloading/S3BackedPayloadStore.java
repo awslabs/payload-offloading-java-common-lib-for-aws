@@ -13,24 +13,17 @@ public class S3BackedPayloadStore implements PayloadStore {
 
     private final String s3BucketName;
     private final S3Dao s3Dao;
-    private final ServerSideEncryptionStrategy serverSideEncryptionStrategy;
 
     public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName) {
-        this(s3Dao, s3BucketName, null);
-    }
-
-    public S3BackedPayloadStore(S3Dao s3Dao, String s3BucketName, ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
         this.s3BucketName = s3BucketName;
         this.s3Dao = s3Dao;
-        this.serverSideEncryptionStrategy = serverSideEncryptionStrategy;
     }
 
     @Override
     public String storeOriginalPayload(String payload) {
         String s3Key = UUID.randomUUID().toString();
 
-        // Store the payload content in S3.
-        s3Dao.storeTextInS3(s3BucketName, s3Key, serverSideEncryptionStrategy, payload);
+        s3Dao.storeTextInS3(s3BucketName, s3Key, payload);
         LOG.info("S3 object created, Bucket name: " + s3BucketName + ", Object key: " + s3Key + ".");
 
         // Convert S3 pointer (bucket name, key, etc) to JSON string

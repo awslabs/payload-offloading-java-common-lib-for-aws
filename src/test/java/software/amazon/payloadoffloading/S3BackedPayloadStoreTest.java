@@ -50,6 +50,17 @@ public class S3BackedPayloadStoreTest {
     }
 
     @Test
+    public void testStoreOriginalPayloadWithS3KeyOnSuccess() {
+        String actualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD, ANY_S3_KEY);
+
+        verify(s3Dao, times(1)).storeTextInS3(eq(S3_BUCKET_NAME), eq(ANY_S3_KEY),
+                eq(ANY_PAYLOAD));
+
+        PayloadS3Pointer expectedPayloadPointer = new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY);
+        assertEquals(expectedPayloadPointer.toJson(), actualPayloadPointer);
+    }
+
+    @Test
     public void testStoreOriginalPayloadDoesAlwaysCreateNewObjects() {
         //Store any payload
         String anyActualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD);

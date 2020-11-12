@@ -11,6 +11,7 @@ public interface PayloadStore {
      * Stores payload in a store that has higher payload size limit than that is supported by original payload store.
      *
      * @param payload
+     * @param optional  an array of optional parameters. optional[0] should be a custom s3Key.
      * @return a pointer that must be used to retrieve the original payload later.
      * @throws SdkClientException  If any internal errors are encountered on the client side while
      *                                attempting to make the request or handle the response. For example
@@ -18,7 +19,7 @@ public interface PayloadStore {
      * @throws S3Exception If an error response is returned by actual PayloadStore indicating
      *                                either a problem with the data in the request, or a server side issue.
      */
-    String storeOriginalPayload(String payload);
+    String storeOriginalPayload(String payload, String... optional);
 
     /**
      * Retrieves the original payload using the given payloadPointer. The pointer must

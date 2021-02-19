@@ -21,14 +21,17 @@ public class S3BackedPayloadStore implements PayloadStore {
 
     @Override
     public String storeOriginalPayload(String payload) {
-        String s3Key = UUID.randomUUID().toString();
+        return storeOriginalPayload(payload, null);
+    }
 
+    @Override
+    public String storeOriginalPayload(String payload, String key) {
+        String s3Key = (key == null) ? UUID.randomUUID().toString() : key;
         s3Dao.storeTextInS3(s3BucketName, s3Key, payload);
         LOG.info("S3 object created, Bucket name: " + s3BucketName + ", Object key: " + s3Key + ".");
 
         // Convert S3 pointer (bucket name, key, etc) to JSON string
         PayloadS3Pointer s3Pointer = new PayloadS3Pointer(s3BucketName, s3Key);
-
         return s3Pointer.toJson();
     }
 

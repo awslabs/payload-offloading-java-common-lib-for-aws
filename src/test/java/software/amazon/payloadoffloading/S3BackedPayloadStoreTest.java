@@ -50,6 +50,22 @@ public class S3BackedPayloadStoreTest {
     }
 
     @Test
+    public void testStoreOriginalPayloadOnSuccessWithS3Key() {
+        payloadStore = new S3BackedPayloadStore(s3Dao, S3_BUCKET_NAME);
+        String actualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD, ANY_S3_KEY);
+
+        ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<ServerSideEncryptionStrategy> sseArgsCaptor = ArgumentCaptor.forClass(ServerSideEncryptionStrategy.class);
+        ArgumentCaptor<ObjectCannedACL> cannedArgsCaptor = ArgumentCaptor.forClass(ObjectCannedACL.class);
+
+        verify(s3Dao, times(1)).storeTextInS3(eq(S3_BUCKET_NAME), keyCaptor.capture(),
+                eq(ANY_PAYLOAD));
+
+        PayloadS3Pointer expectedPayloadPointer = new PayloadS3Pointer(S3_BUCKET_NAME, keyCaptor.getValue());
+        assertEquals(expectedPayloadPointer.toJson(), actualPayloadPointer);
+    }
+
+    @Test
     public void testStoreOriginalPayloadDoesAlwaysCreateNewObjects() {
         //Store any payload
         String anyActualPayloadPointer = payloadStore.storeOriginalPayload(ANY_PAYLOAD);

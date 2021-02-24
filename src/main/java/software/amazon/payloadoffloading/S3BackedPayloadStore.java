@@ -1,5 +1,6 @@
 package software.amazon.payloadoffloading;
 
+import com.amazonaws.util.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -20,8 +21,13 @@ public class S3BackedPayloadStore implements PayloadStore {
     }
 
     @Override
-    public String storeOriginalPayload(String payload, Long payloadContentSize, String... optional) {
-        String s3Key = optional.length > 0 ? optional[0] : UUID.randomUUID().toString();;
+    public String storeOriginalPayload(String payload, Long payloadContentSize) {
+        return storeOriginalPayload(payload, payloadContentSize, null);
+    }
+
+    @Override
+    public String storeOriginalPayload(String payload, Long payloadContentSize, String key) {
+        String s3Key = (key!=null) ? key : UUID.randomUUID().toString();;
 
         // Store the payload content in S3.
         s3Dao.storeTextInS3(s3BucketName, s3Key, payload, payloadContentSize);

@@ -1,6 +1,5 @@
 package software.amazon.payloadoffloading;
 
-import com.amazonaws.util.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

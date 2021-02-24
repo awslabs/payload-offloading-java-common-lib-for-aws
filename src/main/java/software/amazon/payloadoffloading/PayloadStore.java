@@ -22,6 +22,21 @@ public interface PayloadStore {
     String storeOriginalPayload(String payload, Long payloadContentSize);
 
     /**
+     * Stores payload in a store that has higher payload size limit than that is supported by original payload store.
+     *
+     * @param payload
+     * @param payloadContentSize
+     * @param key  custom s3Key.
+     * @return a pointer that must be used to retrieve the original payload later.
+     * @throws AmazonClientException  If any internal errors are encountered on the client side while
+     *                                attempting to make the request or handle the response. For example
+     *                                if a network connection is not available.
+     * @throws AmazonServiceException If an error response is returned by actual PayloadStore indicating
+     *                                either a problem with the data in the request, or a server side issue.
+     */
+    String storeOriginalPayload(String payload, Long payloadContentSize, String key);
+
+    /**
      * Retrieves the original payload using the given payloadPointer. The pointer must
      * have been obtained using {@link storeOriginalPayload}
      *

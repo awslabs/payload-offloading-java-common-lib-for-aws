@@ -21,7 +21,12 @@ public class S3BackedPayloadStore implements PayloadStore {
 
     @Override
     public String storeOriginalPayload(String payload, Long payloadContentSize) {
-        String s3Key = UUID.randomUUID().toString();
+        return storeOriginalPayload(payload, payloadContentSize, null);
+    }
+
+    @Override
+    public String storeOriginalPayload(String payload, Long payloadContentSize, String key) {
+        String s3Key = (key!=null) ? key : UUID.randomUUID().toString();
 
         // Store the payload content in S3.
         s3Dao.storeTextInS3(s3BucketName, s3Key, payload, payloadContentSize);

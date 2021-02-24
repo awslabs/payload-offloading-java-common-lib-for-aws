@@ -20,9 +20,13 @@ public class S3BackedPayloadStore implements PayloadStore {
     }
 
     @Override
-    public String storeOriginalPayload(String payload, String... optional) {
-        String s3Key = optional.length > 0 ? optional[0] : UUID.randomUUID().toString();
+    public String storeOriginalPayload(String payload) {
+        String s3Key = UUID.randomUUID().toString();
+        return storeOriginalPayload(payload, s3Key);
+    }
 
+    @Override
+    public String storeOriginalPayload(String payload, String s3Key) {
         s3Dao.storeTextInS3(s3BucketName, s3Key, payload);
         LOG.info("S3 object created, Bucket name: " + s3BucketName + ", Object key: " + s3Key + ".");
 

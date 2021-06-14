@@ -36,7 +36,7 @@
     </developers>
 
     <properties>
-        <aws-java-sdk.version>2.13.64</aws-java-sdk.version>
+        <aws-java-sdk.version>2.16.73</aws-java-sdk.version>
     </properties>
 
     <dependencies>
@@ -121,6 +121,7 @@
                             TODO-RS: Java 8 is more strict about some javadoc tags.
                             We'll need to update quite a few to remove this workaround.
                             -->
+                            <source>8</source>
                             <additionalparam>-Xdoclint:none</additionalparam>
                         </configuration>
                     </execution>

@@ -4,11 +4,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.annotations.NotThreadSafe;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
 /**
- * <p>Amazon payload storage configuration options such as synchronous Amazon S3 client,
+ * <p>Amazon payload storage configuration options such as asynchronous Amazon S3 client,
  * bucket name, and payload size threshold for payloads.</p>
  *
  * <p>Server side encryption is optional and can be enabled using with {@link #withServerSideEncryption(ServerSideEncryptionStrategy)}
@@ -25,53 +26,53 @@ import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
  * or
  *
  * <pre>
-*     withServerSideEncryption(ServerSideEncrptionFactory.customerKey(YOUR_CUSTOMER_ID))
+ *     withServerSideEncryption(ServerSideEncrptionFactory.customerKey(YOUR_CUSTOMER_ID))
  * </pre>
  *
  * @see software.amazon.payloadoffloading.ServerSideEncryptionFactory
  */
 @NotThreadSafe
-public class PayloadStorageConfiguration extends PayloadStorageConfigurationBase {
-    private static final Logger LOG = LoggerFactory.getLogger(PayloadStorageConfiguration.class);
+public class PayloadStorageAsyncConfiguration extends PayloadStorageConfigurationBase {
+    private static final Logger LOG = LoggerFactory.getLogger(PayloadStorageAsyncConfiguration.class);
 
-    private S3Client s3;
+    private S3AsyncClient s3Async;
 
-    public PayloadStorageConfiguration() {
-        s3 = null;
+    public PayloadStorageAsyncConfiguration() {
+        s3Async = null;
     }
 
-    public PayloadStorageConfiguration(PayloadStorageConfiguration other) {
+    public PayloadStorageAsyncConfiguration(PayloadStorageAsyncConfiguration other) {
         super(other);
-        this.s3 = other.getS3Client();
+        this.s3Async = other.getS3AsyncClient();
     }
 
     /**
-     * Enables support for payloads .
+     * Enables support for payloads using asynchronous storage.
      *
-     * @param s3           Amazon S3 client which is going to be used for storing payload.
+     * @param s3Async      Amazon S3 client which is going to be used for storing payload.
      * @param s3BucketName Name of the bucket which is going to be used for storing payload.
      *                     The bucket must be already created and configured in s3.
      */
-    public void setPayloadSupportEnabled(S3Client s3, String s3BucketName) {
-        if (s3 == null || s3BucketName == null) {
+    public void setPayloadSupportEnabled(S3AsyncClient s3Async, String s3BucketName) {
+        if (s3Async == null || s3BucketName == null) {
             String errorMessage = "S3 client and/or S3 bucket name cannot be null.";
             LOG.error(errorMessage);
             throw SdkClientException.create(errorMessage);
         }
         super.setPayloadSupportEnabled(s3BucketName);
-        this.s3 = s3;
+        this.s3Async = s3Async;
     }
 
     /**
      * Enables support for payload.
      *
-     * @param s3           Amazon S3 client which is going to be used for storing payloads.
+     * @param s3Async      Amazon S3 client which is going to be used for storing payload.
      * @param s3BucketName Name of the bucket which is going to be used for storing payloads.
      *                     The bucket must be already created and configured in s3.
-     * @return the updated PayloadStorageConfiguration object.
+     * @return the updated PayloadStorageAsyncConfiguration object.
      */
-    public PayloadStorageConfiguration withPayloadSupportEnabled(S3Client s3, String s3BucketName) {
-        setPayloadSupportEnabled(s3, s3BucketName);
+    public PayloadStorageAsyncConfiguration withPayloadSupportEnabled(S3AsyncClient s3Async, String s3BucketName) {
+        setPayloadSupportEnabled(s3Async, s3BucketName);
         return this;
     }
 
@@ -80,26 +81,27 @@ public class PayloadStorageConfiguration extends PayloadStorageConfigurationBase
      */
     public void setPayloadSupportDisabled() {
         super.setPayloadSupportDisabled();
-        s3 = null;
+        s3Async = null;
+        LOG.info("Payload support disabled.");
     }
 
     /**
      * Disables support for payload.
      *
-     * @return the updated PayloadStorageConfiguration object.
+     * @return the updated PayloadStorageAsyncConfiguration object.
      */
-    public PayloadStorageConfiguration withPayloadSupportDisabled() {
+    public PayloadStorageAsyncConfiguration withPayloadSupportDisabled() {
         setPayloadSupportDisabled();
         return this;
     }
 
     /**
-     * Gets the Amazon S3 client which is being used for storing payloads.
+     * Gets the Amazon S3 async client which is being used for storing payloads.
      *
-     * @return Reference to the Amazon S3 client which is being used.
+     * @return Reference to the Amazon S3 async client which is being used.
      */
-    public S3Client getS3Client() {
-        return s3;
+    public S3AsyncClient getS3AsyncClient() {
+        return s3Async;
     }
 
     /**
@@ -107,9 +109,9 @@ public class PayloadStorageConfiguration extends PayloadStorageConfigurationBase
      *
      * @param payloadSizeThreshold Payload size threshold to be used for storing in Amazon S3.
      *                             Default: 256KB.
-     * @return the updated PayloadStorageConfiguration object.
+     * @return the updated PayloadStorageAsyncConfiguration object.
      */
-    public PayloadStorageConfiguration withPayloadSizeThreshold(int payloadSizeThreshold) {
+    public PayloadStorageAsyncConfiguration withPayloadSizeThreshold(int payloadSizeThreshold) {
         setPayloadSizeThreshold(payloadSizeThreshold);
         return this;
     }
@@ -119,9 +121,9 @@ public class PayloadStorageConfiguration extends PayloadStorageConfigurationBase
      *
      * @param alwaysThroughS3 Whether or not all payloads regardless of their size
      *                        should be stored in Amazon S3. Default: false
-     * @return the updated PayloadStorageConfiguration object.
+     * @return the updated PayloadStorageAsyncConfiguration object.
      */
-    public PayloadStorageConfiguration withAlwaysThroughS3(boolean alwaysThroughS3) {
+    public PayloadStorageAsyncConfiguration withAlwaysThroughS3(boolean alwaysThroughS3) {
         setAlwaysThroughS3(alwaysThroughS3);
         return this;
     }
@@ -132,9 +134,9 @@ public class PayloadStorageConfiguration extends PayloadStorageConfigurationBase
      * This is optional, it is set only when you want to configure S3 server side encryption with KMS.
      *
      * @param serverSideEncryptionStrategy The method of encryption required for S3 server side encryption with KMS.
-     * @return the updated PayloadStorageConfiguration object.
+     * @return the updated PayloadStorageAsyncConfiguration object.
      */
-    public PayloadStorageConfiguration withServerSideEncryption(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
+    public PayloadStorageAsyncConfiguration withServerSideEncryption(ServerSideEncryptionStrategy serverSideEncryptionStrategy) {
         setServerSideEncryptionStrategy(serverSideEncryptionStrategy);
         return this;
     }
@@ -144,7 +146,7 @@ public class PayloadStorageConfiguration extends PayloadStorageConfigurationBase
      * @param objectCannedACL
      *            The ACL to be used when storing objects in Amazon S3
      */
-    public PayloadStorageConfiguration withObjectCannedACL(ObjectCannedACL objectCannedACL) {
+    public PayloadStorageAsyncConfiguration withObjectCannedACL(ObjectCannedACL objectCannedACL) {
         setObjectCannedACL(objectCannedACL);
         return this;
     }

@@ -1,6 +1,7 @@
 package software.amazon.payloadoffloading;
 
 import org.junit.Test;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
@@ -44,6 +45,33 @@ public class PayloadStorageConfigurationTest {
     }
 
     @Test
+    public void testCopyConstructorForAsync() {
+        S3AsyncClient s3Async = mock(S3AsyncClient.class);
+
+        boolean alwaysThroughS3 = true;
+        int payloadSizeThreshold = 500;
+
+        PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
+
+        payloadStorageConfiguration.withPayloadSupportEnabled(s3Async, s3BucketName)
+            .withAlwaysThroughS3(alwaysThroughS3)
+            .withPayloadSizeThreshold(payloadSizeThreshold)
+            .withServerSideEncryption(SERVER_SIDE_ENCRYPTION_STRATEGY)
+            .withObjectCannedACL(objectCannelACL);
+
+        PayloadStorageConfiguration newPayloadStorageConfiguration = new PayloadStorageConfiguration(payloadStorageConfiguration);
+
+        assertEquals(s3Async, newPayloadStorageConfiguration.getS3AsyncClient());
+        assertEquals(s3BucketName, newPayloadStorageConfiguration.getS3BucketName());
+        assertEquals(SERVER_SIDE_ENCRYPTION_STRATEGY, newPayloadStorageConfiguration.getServerSideEncryptionStrategy());
+        assertTrue(newPayloadStorageConfiguration.isPayloadSupportEnabled());
+        assertEquals(objectCannelACL, newPayloadStorageConfiguration.getObjectCannedACL());
+        assertEquals(alwaysThroughS3, newPayloadStorageConfiguration.isAlwaysThroughS3());
+        assertEquals(payloadSizeThreshold, newPayloadStorageConfiguration.getPayloadSizeThreshold());
+        assertNotSame(newPayloadStorageConfiguration, payloadStorageConfiguration);
+    }
+
+    @Test
     public void testPayloadSupportEnabled() {
         S3Client s3 = mock(S3Client.class);
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
@@ -51,6 +79,19 @@ public class PayloadStorageConfigurationTest {
 
         assertTrue(payloadStorageConfiguration.isPayloadSupportEnabled());
         assertNotNull(payloadStorageConfiguration.getS3Client());
+        assertNull(payloadStorageConfiguration.getS3AsyncClient());
+        assertEquals(s3BucketName, payloadStorageConfiguration.getS3BucketName());
+    }
+
+    @Test
+    public void testPayloadSupportEnabledForAsync() {
+        S3AsyncClient s3Async = mock(S3AsyncClient.class);
+        PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
+        payloadStorageConfiguration.setPayloadSupportEnabled(s3Async, s3BucketName);
+
+        assertTrue(payloadStorageConfiguration.isPayloadSupportEnabled());
+        assertNull(payloadStorageConfiguration.getS3Client());
+        assertNotNull(payloadStorageConfiguration.getS3AsyncClient());
         assertEquals(s3BucketName, payloadStorageConfiguration.getS3BucketName());
     }
 
@@ -60,6 +101,7 @@ public class PayloadStorageConfigurationTest {
         payloadStorageConfiguration.setPayloadSupportDisabled();
 
         assertNull(payloadStorageConfiguration.getS3Client());
+        assertNull(payloadStorageConfiguration.getS3AsyncClient());
         assertNull(payloadStorageConfiguration.getS3BucketName());
     }
 

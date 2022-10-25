@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.annotations.NotThreadSafe;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
@@ -35,6 +36,7 @@ public class PayloadStorageConfiguration {
     private static final Logger LOG = LoggerFactory.getLogger(PayloadStorageConfiguration.class);
 
     private S3Client s3;
+    private S3AsyncClient s3Async;
     private String s3BucketName;
     private int payloadSizeThreshold = 0;
     private boolean alwaysThroughS3 = false;
@@ -57,6 +59,7 @@ public class PayloadStorageConfiguration {
 
     public PayloadStorageConfiguration(PayloadStorageConfiguration other) {
         this.s3 = other.getS3Client();
+        this.s3Async = other.getS3AsyncClient();
         this.s3BucketName = other.getS3BucketName();
         this.payloadSupport = other.isPayloadSupportEnabled();
         this.alwaysThroughS3 = other.isAlwaysThroughS3();
@@ -82,6 +85,7 @@ public class PayloadStorageConfiguration {
             LOG.warn("Payload support is already enabled. Overwriting AmazonS3Client and S3BucketName.");
         }
         this.s3 = s3;
+        this.s3Async = null;
         this.s3BucketName = s3BucketName;
         this.payloadSupport = true;
         LOG.info("Payload support enabled.");
@@ -101,10 +105,47 @@ public class PayloadStorageConfiguration {
     }
 
     /**
+     * Enables support for payloads using asynchronous storage.
+     *
+     * @param s3Async      Amazon S3 client which is going to be used for storing payload.
+     * @param s3BucketName Name of the bucket which is going to be used for storing payload.
+     *                     The bucket must be already created and configured in s3.
+     */
+    public void setPayloadSupportEnabled(S3AsyncClient s3Async, String s3BucketName) {
+        if (s3Async == null || s3BucketName == null) {
+            String errorMessage = "S3 client and/or S3 bucket name cannot be null.";
+            LOG.error(errorMessage);
+            throw SdkClientException.create(errorMessage);
+        }
+        if (isPayloadSupportEnabled()) {
+            LOG.warn("Payload support is already enabled. Overwriting AmazonS3Client and S3BucketName.");
+        }
+        this.s3 = null;
+        this.s3Async = s3Async;
+        this.s3BucketName = s3BucketName;
+        this.payloadSupport = true;
+        LOG.info("Payload support enabled.");
+    }
+
+    /**
+     * Enables support for payload.
+     *
+     * @param s3Async      Amazon S3 client which is going to be used for storing payload.
+     * @param s3BucketName Name of the bucket which is going to be used for storing payloads.
+     *                     The bucket must be already created and configured in s3.
+     * @return the updated PayloadStorageConfiguration object.
+     */
+    public PayloadStorageConfiguration withPayloadSupportEnabled(S3AsyncClient s3Async, String s3BucketName) {
+        setPayloadSupportEnabled(s3Async, s3BucketName);
+        return this;
+    }
+
+    /**
      * Disables support for payloads.
      */
     public void setPayloadSupportDisabled() {
         s3 = null;
+        s3Async = null;
         s3BucketName = null;
         payloadSupport = false;
         LOG.info("Payload support disabled.");
@@ -136,6 +177,15 @@ public class PayloadStorageConfiguration {
      */
     public S3Client getS3Client() {
         return s3;
+    }
+
+    /**
+     * Gets the Amazon S3 async client which is being used for storing payloads.
+     *
+     * @return Reference to the Amazon S3 async client which is being used.
+     */
+    public S3AsyncClient getS3AsyncClient() {
+        return s3Async;
     }
 
     /**

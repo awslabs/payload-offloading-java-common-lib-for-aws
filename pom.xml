@@ -6,7 +6,7 @@
 
     <groupId>software.amazon.payloadoffloading</groupId>
     <artifactId>payloadoffloading-common</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <packaging>jar</packaging>
     <name>Payload offloading common library for AWS</name>
     <description>Common library between extended Amazon AWS clients to save payloads up to 2GB on Amazon S3.</description>
@@ -36,7 +36,7 @@
     </developers>
 
     <properties>
-        <aws-java-sdk.version>1.11.817</aws-java-sdk.version>
+        <aws-java-sdk.version>1.12.383</aws-java-sdk.version>
     </properties>
 
     <dependencies>

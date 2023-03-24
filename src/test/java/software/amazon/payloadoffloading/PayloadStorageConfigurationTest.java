@@ -3,11 +3,16 @@ package software.amazon.payloadoffloading;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.SSEAwsKeyManagementParams;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.junit.Assert.*;
 
 /**
  * Tests the PayloadStorageConfiguration class.
@@ -19,7 +24,7 @@ public class PayloadStorageConfigurationTest {
     private SSEAwsKeyManagementParams sseAwsKeyManagementParams;
     private CannedAccessControlList cannedAccessControlList;
 
-    @Before
+    @BeforeEach
     public void setup() {
         sseAwsKeyManagementParams = new SSEAwsKeyManagementParams(s3ServerSideEncryptionKMSKeyId);
         cannedAccessControlList = CannedAccessControlList.BucketOwnerFullControl;
@@ -54,7 +59,7 @@ public class PayloadStorageConfigurationTest {
 
     @Test
     public void testPayloadSupportEnabled() {
-        AmazonS3 s3 = mock(AmazonS3.class);        
+        AmazonS3 s3 = mock(AmazonS3.class);
         PayloadStorageConfiguration payloadStorageConfiguration = new PayloadStorageConfiguration();
         payloadStorageConfiguration.setPayloadSupportEnabled(s3, s3BucketName);
 
@@ -91,7 +96,7 @@ public class PayloadStorageConfigurationTest {
 
         payloadStorageConfiguration.setSSEAwsKeyManagementParams(sseAwsKeyManagementParams);
         assertEquals(s3ServerSideEncryptionKMSKeyId, payloadStorageConfiguration.getSSEAwsKeyManagementParams()
-            .getAwsKmsKeyId());
+                .getAwsKmsKeyId());
     }
 
     @Test

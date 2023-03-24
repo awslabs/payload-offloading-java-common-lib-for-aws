@@ -33,7 +33,7 @@ You can download release builds through the [releases section of this](https://g
   <dependency>
     <groupId>software.amazon.payloadoffloading</groupId>
     <artifactId>payloadoffloading-common</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.3</version>
   </dependency>
 ```                                                                                                                     
 

@@ -41,11 +41,11 @@ public class S3Dao {
                 .key(s3Key)
                 .build();
 
-        ResponseInputStream<GetObjectResponse> object = null;
+        ResponseInputStream<GetObjectResponse> object;
         try {
             object = s3Client.getObject(getObjectRequest);
         } catch (SdkException e) {
-            String errorMessage = "Failed to get the S3 object which contains the payload.";
+            String errorMessage = "Failed to get the S3 object from Bucket: {" + s3BucketName  + "} with Key: {" + s3Key + "}.";
             LOG.error(errorMessage, e);
             throw SdkException.create(errorMessage, e);
         }

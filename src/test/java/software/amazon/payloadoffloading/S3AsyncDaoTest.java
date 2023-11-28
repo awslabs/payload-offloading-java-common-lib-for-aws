@@ -1,7 +1,7 @@
 package software.amazon.payloadoffloading;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -10,10 +10,8 @@ import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
-import junitparams.JUnitParamsRunner;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.async.AsyncRequestBody;
@@ -25,7 +23,6 @@ import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.ServerSideEncryption;
 
-@RunWith(JUnitParamsRunner.class)
 public class S3AsyncDaoTest {
 
     private static String s3ServerSideEncryptionKMSKeyId = "test-customer-managed-kms-key-id";
@@ -37,7 +34,7 @@ public class S3AsyncDaoTest {
     private S3AsyncClient s3AsyncClient;
     private S3AsyncDao dao;
 
-    @Before
+    @BeforeEach
     public void setup() {
         s3AsyncClient = mock(S3AsyncClient.class);
     }

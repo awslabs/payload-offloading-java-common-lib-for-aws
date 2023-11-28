@@ -1,22 +1,24 @@
 package software.amazon.payloadoffloading;
 
-import junitparams.JUnitParamsRunner;
-import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
-@RunWith(JUnitParamsRunner.class)
 public class S3BackedPayloadStoreTest {
     private static final String S3_BUCKET_NAME = "test-bucket-name";
     private static final String ANY_PAYLOAD = "AnyPayload";
@@ -25,10 +27,7 @@ public class S3BackedPayloadStoreTest {
     private PayloadStore payloadStore;
     private S3Dao s3Dao;
 
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
-
-    @Before
+    @BeforeEach
     public void setup() {
         s3Dao = mock(S3Dao.class);
         payloadStore = new S3BackedPayloadStore(s3Dao, S3_BUCKET_NAME);
@@ -84,8 +83,8 @@ public class S3BackedPayloadStoreTest {
         PayloadS3Pointer anyOtherExpectedPayloadPointer = new PayloadS3Pointer(S3_BUCKET_NAME, anyOtherS3Key);
         assertEquals(anyOtherExpectedPayloadPointer.toJson(), anyOtherActualPayloadPointer);
 
-        assertThat(anyS3Key, Matchers.not(anyOtherS3Key));
-        assertThat(anyActualPayloadPointer, Matchers.not(anyOtherActualPayloadPointer));
+        assertNotEquals(anyS3Key, anyOtherS3Key);
+        assertNotEquals(anyActualPayloadPointer, anyOtherActualPayloadPointer);
     }
 
     @Test
@@ -97,10 +96,8 @@ public class S3BackedPayloadStoreTest {
                         any(String.class),
                         any(String.class));
 
-        exception.expect(SdkException.class);
-        exception.expectMessage("S3 Exception");
         //Any S3 Dao exception is thrown back as-is to clients
-        payloadStore.storeOriginalPayload(ANY_PAYLOAD);
+        assertThrows(SdkException.class, () -> payloadStore.storeOriginalPayload(ANY_PAYLOAD), "S3 Exception");
     }
 
     @Test
@@ -120,21 +117,21 @@ public class S3BackedPayloadStoreTest {
 
     @Test
     public void testGetOriginalPayloadIncorrectPointer() {
-        exception.expect(SdkClientException.class);
-        exception.expectMessage(INCORRECT_POINTER_EXCEPTION_MSG);
         //Any S3 Dao exception is thrown back as-is to clients
-        payloadStore.getOriginalPayload("IncorrectPointer");
+        assertThrows(SdkClientException.class, () -> payloadStore.getOriginalPayload("IncorrectPointer"),
+                INCORRECT_POINTER_EXCEPTION_MSG);
         verifyNoInteractions(s3Dao);
     }
 
     @Test
     public void testGetOriginalPayloadOnS3Failure() {
-        when(s3Dao.getTextFromS3(any(String.class), any(String.class))).thenThrow(SdkException.create("S3 Exception", new Throwable()));
-        exception.expect(SdkException.class);
-        exception.expectMessage("S3 Exception");
-        //Any S3 Dao exception is thrown back as-is to clients
+        when(s3Dao.getTextFromS3(any(String.class), any(String.class)))
+                .thenThrow(SdkException.create("S3 Exception", new Throwable()));
+
         PayloadS3Pointer anyPointer = new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY);
-        payloadStore.getOriginalPayload(anyPointer.toJson());
+        //Any S3 Dao exception is thrown back as-is to clients
+        assertThrows(SdkException.class, () -> payloadStore.getOriginalPayload(anyPointer.toJson()),
+                "S3 Exception");
     }
 
     @Test
@@ -152,9 +149,8 @@ public class S3BackedPayloadStoreTest {
 
     @Test
     public void testDeleteOriginalPayloadIncorrectPointer() {
-        exception.expect(SdkClientException.class);
-        exception.expectMessage(INCORRECT_POINTER_EXCEPTION_MSG);
-        payloadStore.deleteOriginalPayload("IncorrectPointer");
+        assertThrows(SdkClientException.class, () -> payloadStore.deleteOriginalPayload("IncorrectPointer"),
+                INCORRECT_POINTER_EXCEPTION_MSG);
         verifyNoInteractions(s3Dao);
     }
 }

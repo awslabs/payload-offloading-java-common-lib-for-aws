@@ -1,5 +1,6 @@
 package software.amazon.payloadoffloading;
 
+import java.util.concurrent.CompletionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -34,4 +35,12 @@ public class Util {
     public static String getUserAgentHeader(String clientName) {
         return clientName + "/" + VersionInfo.SDK_VERSION;
     }
+
+    public static Throwable unwrapFutureException(Throwable t) {
+        if ((t instanceof CompletionException) && t.getCause() != null) {
+            t = t.getCause();
+        }
+        return t;
+    }
+
 }

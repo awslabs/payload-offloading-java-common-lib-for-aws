@@ -1,5 +1,7 @@
 package software.amazon.payloadoffloading;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -7,10 +9,13 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.utils.IoUtils;
 
@@ -103,5 +108,27 @@ public class S3Dao {
         }
 
         LOG.info("S3 object deleted, Bucket name: " + s3BucketName + ", Object key: " + s3Key + ".");
+    }
+
+    public void deletePayloadsFromS3(String s3BucketName, Collection<String> s3Keys) {
+        try {
+            DeleteObjectsRequest deleteObjectsRequest = DeleteObjectsRequest.builder()
+                .bucket(s3BucketName)
+                .delete(Delete.builder()
+                    .objects(s3Keys.stream()
+                        .map(s3Key -> ObjectIdentifier.builder()
+                            .key(s3Key)
+                            .build())
+                        .collect(Collectors.toList()))
+                    .build())
+                .build();
+            s3Client.deleteObjects(deleteObjectsRequest);
+        } catch (SdkException e) {
+            String errorMessage = "Failed to delete the S3 object which contains the payload";
+            LOG.error(errorMessage, e);
+            throw SdkException.create(errorMessage, e);
+        }
+
+        LOG.info("S3 object deleted, Bucket name: " + s3BucketName + ", Object keys: " + s3Keys + ".");
     }
 }

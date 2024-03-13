@@ -1,5 +1,9 @@
 package software.amazon.payloadoffloading;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,5 +59,21 @@ public class S3BackedPayloadStore implements PayloadStore {
         String s3BucketName = s3Pointer.getS3BucketName();
         String s3Key = s3Pointer.getS3Key();
         s3Dao.deletePayloadFromS3(s3BucketName, s3Key);
+    }
+
+    @Override
+    public void deleteOriginalPayloads(Collection<String> payloadPointers) {
+        // Sort by S3 bucket.
+        Map<String, List<PayloadS3Pointer>> offloadedMessages = payloadPointers.stream()
+            .map(PayloadS3Pointer::fromJson)
+            .collect(Collectors.groupingBy(PayloadS3Pointer::getS3BucketName));
+
+        for (Map.Entry<String, List<PayloadS3Pointer>> bucket : offloadedMessages.entrySet()) {
+            String s3BucketName = bucket.getKey();
+            List<String> s3Keys = bucket.getValue().stream()
+                .map(PayloadS3Pointer::getS3Key)
+                .collect(Collectors.toList());
+            s3Dao.deletePayloadsFromS3(s3BucketName, s3Keys);
+        }
     }
 }

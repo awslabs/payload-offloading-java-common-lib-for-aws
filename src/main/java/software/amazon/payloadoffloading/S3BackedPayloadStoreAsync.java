@@ -1,11 +1,15 @@
 package software.amazon.payloadoffloading;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.payloadoffloading.PayloadS3Pointer;
 
 /**
  * S3 based implementation for PayloadStoreAsync.
@@ -68,6 +72,36 @@ public class S3BackedPayloadStoreAsync implements PayloadStoreAsync {
             String s3BucketName = s3Pointer.getS3BucketName();
             String s3Key = s3Pointer.getS3Key();
             return s3Dao.deletePayloadFromS3(s3BucketName, s3Key);
+        } catch (Exception e) {
+            CompletableFuture<Void> futureEx = new CompletableFuture<>();
+            futureEx.completeExceptionally((e instanceof RuntimeException) ? e : new CompletionException(e));
+            return futureEx;
+        }
+    }
+
+    @Override
+    public CompletableFuture<Void> deleteOriginalPayloads(Collection<String> payloadPointers) {
+        // Skip the delete if there are no payloads to delete.
+        if (payloadPointers.isEmpty()) {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        try {
+            // Sort by S3 bucket.
+            Map<String, List<PayloadS3Pointer>> offloadedMessages = payloadPointers.stream()
+                .map(PayloadS3Pointer::fromJson)
+                .collect(Collectors.groupingBy(PayloadS3Pointer::getS3BucketName));
+
+            List<CompletableFuture<Void>> deleteFutures = new ArrayList<>(offloadedMessages.size());
+            for (Map.Entry<String, List<PayloadS3Pointer>> bucket : offloadedMessages.entrySet()) {
+                String s3BucketName = bucket.getKey();
+                List<String> s3Keys = bucket.getValue().stream()
+                    .map(PayloadS3Pointer::getS3Key)
+                    .collect(Collectors.toList());
+                deleteFutures.add(s3Dao.deletePayloadsFromS3(s3BucketName, s3Keys));
+            }
+
+            return CompletableFuture.allOf(deleteFutures.toArray(new CompletableFuture[0]));
         } catch (Exception e) {
             CompletableFuture<Void> futureEx = new CompletableFuture<>();
             futureEx.completeExceptionally((e instanceof RuntimeException) ? e : new CompletionException(e));

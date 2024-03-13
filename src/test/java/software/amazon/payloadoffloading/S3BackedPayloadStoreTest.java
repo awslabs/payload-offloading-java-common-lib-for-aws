@@ -1,5 +1,10 @@
 package software.amazon.payloadoffloading;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,8 +26,10 @@ import static org.mockito.Mockito.when;
 
 public class S3BackedPayloadStoreTest {
     private static final String S3_BUCKET_NAME = "test-bucket-name";
+    private static final String OTHER_S3_BUCKET_NAME = "other-bucket-name";
     private static final String ANY_PAYLOAD = "AnyPayload";
     private static final String ANY_S3_KEY = "AnyS3key";
+    private static final String ANY_OTHER_S3_KEY = "AnyOtherS3key";
     private static final String INCORRECT_POINTER_EXCEPTION_MSG = "Failed to read the S3 object pointer from given string";
     private PayloadStore payloadStore;
     private S3Dao s3Dao;
@@ -152,5 +159,59 @@ public class S3BackedPayloadStoreTest {
         assertThrows(SdkClientException.class, () -> payloadStore.deleteOriginalPayload("IncorrectPointer"),
                 INCORRECT_POINTER_EXCEPTION_MSG);
         verifyNoInteractions(s3Dao);
+    }
+    @Test
+    public void testDeleteOriginalPayloadsOnSuccess() {
+        List<String> payloadPointers = new ArrayList<>();
+        payloadPointers.add(new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY).toJson());
+        payloadStore.deleteOriginalPayloads(payloadPointers);
+
+        ArgumentCaptor<String> bucketNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Collection> keyCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(s3Dao, times(1)).deletePayloadsFromS3(bucketNameCaptor.capture(), keyCaptor.capture());
+
+        assertEquals(Collections.singletonList(ANY_S3_KEY), keyCaptor.getValue());
+        assertEquals(S3_BUCKET_NAME, bucketNameCaptor.getValue());
+    }
+
+    @Test
+    public void testDeleteOriginalPayloadsSameBucket() {
+        List<String> payloadPointers = new ArrayList<>();
+        payloadPointers.add(new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY).toJson());
+        payloadPointers.add(new PayloadS3Pointer(S3_BUCKET_NAME, ANY_OTHER_S3_KEY).toJson());
+        payloadStore.deleteOriginalPayloads(payloadPointers);
+
+        ArgumentCaptor<String> bucketNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Collection> keyCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(s3Dao, times(1)).deletePayloadsFromS3(bucketNameCaptor.capture(), keyCaptor.capture());
+
+        assertEquals(Arrays.asList(ANY_S3_KEY, ANY_OTHER_S3_KEY), keyCaptor.getValue());
+        assertEquals(S3_BUCKET_NAME, bucketNameCaptor.getValue());
+    }
+
+    @Test
+    public void testDeleteOriginalPayloadsDifferentBuckets() {
+        List<String> payloadPointers = new ArrayList<>();
+        payloadPointers.add(new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY).toJson());
+        payloadPointers.add(new PayloadS3Pointer(OTHER_S3_BUCKET_NAME, ANY_OTHER_S3_KEY).toJson());
+        payloadStore.deleteOriginalPayloads(payloadPointers);
+
+        ArgumentCaptor<String> bucketNameCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Collection> keyCaptor = ArgumentCaptor.forClass(Collection.class);
+        verify(s3Dao, times(2)).deletePayloadsFromS3(bucketNameCaptor.capture(), keyCaptor.capture());
+
+        assertEquals(Collections.singletonList(ANY_S3_KEY), keyCaptor.getAllValues().get(0));
+        assertEquals(Collections.singletonList(ANY_OTHER_S3_KEY), keyCaptor.getAllValues().get(1));
+        assertEquals(S3_BUCKET_NAME, bucketNameCaptor.getAllValues().get(0));
+        assertEquals(OTHER_S3_BUCKET_NAME, bucketNameCaptor.getAllValues().get(1));
+    }
+
+    @Test
+    public void testDeleteOriginalPayloadsIncorrectPointer() {
+        List<String> payloadPointers = new ArrayList<>();
+        payloadPointers.add(new PayloadS3Pointer(S3_BUCKET_NAME, ANY_S3_KEY).toJson());
+        payloadPointers.add("IncorrectPointer");
+        assertThrows(SdkClientException.class, () -> payloadStore.deleteOriginalPayloads(payloadPointers),
+            INCORRECT_POINTER_EXCEPTION_MSG);
     }
 }

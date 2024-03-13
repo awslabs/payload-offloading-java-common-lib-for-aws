@@ -1,8 +1,10 @@
 package software.amazon.payloadoffloading;
 
 import java.io.UncheckedIOException;
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.ResponseBytes;
@@ -11,9 +13,12 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.ObjectCannedACL;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
@@ -112,6 +117,35 @@ public class S3AsyncDao {
                 }
 
                 LOG.info("S3 object deleted, Bucket name: " + s3BucketName + ", Object key: " + s3Key + ".");
+                return null;
+            });
+    }
+
+    public CompletableFuture<Void> deletePayloadsFromS3(String s3BucketName, Collection<String> s3Keys) {
+        DeleteObjectsRequest deleteObjectsRequest = DeleteObjectsRequest.builder()
+            .bucket(s3BucketName)
+            .delete(Delete.builder()
+                .objects(s3Keys.stream()
+                    .map(s3Key -> ObjectIdentifier.builder()
+                        .key(s3Key)
+                        .build())
+                    .collect(Collectors.toList()))
+                .build())
+            .build();
+
+        return s3Client.deleteObjects(deleteObjectsRequest)
+            .handle((v, tIn) -> {
+                if (tIn != null) {
+                    Throwable t = Util.unwrapFutureException(tIn);
+                    if (t instanceof SdkException) {
+                        String errorMessage = "Failed to delete the S3 object which contains the payload";
+                        LOG.error(errorMessage, t);
+                        throw SdkException.create(errorMessage, t);
+                    }
+                    throw new CompletionException(t);
+                }
+
+                LOG.info("S3 object deleted, Bucket name: " + s3BucketName + ", Object keys: " + s3Keys + ".");
                 return null;
             });
     }
